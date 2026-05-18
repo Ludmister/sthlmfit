@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SthlmFit — Logga in</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="onboard-wrap">
+  <div class="onboard-card">
+
+    <div class="onboard-logo">Sthlm<span>Fit</span></div>
+    <p class="onboard-tagline">Träna för din stadsdel. Varje poäng räknas.</p>
+
+    <div class="onboard-progress" id="progress-bar" style="visibility:hidden">
+      <div class="onboard-progress-fill" id="progress-fill" style="width:25%"></div>
+    </div>
+
+    <!-- Step 1: Login / Signup -->
+    <div id="step-1">
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="mode-login-btn">Logga in</button>
+        <button class="mode-btn" id="mode-signup-btn">Skapa konto</button>
+      </div>
+
+      <div id="login-form">
+        <div class="alert alert-error" id="login-error"></div>
+        <div class="field">
+          <label class="field-label" for="login-email">E-post</label>
+          <input class="input" type="email" id="login-email" placeholder="din@email.se" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="login-pw">Lösenord</label>
+          <input class="input" type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button class="btn btn-primary btn-full" id="login-btn">Logga in</button>
+      </div>
+
+      <div id="signup-form" style="display:none">
+        <div class="alert alert-error" id="signup-error"></div>
+        <div class="alert alert-success" id="signup-confirm"></div>
+        <div class="field">
+          <label class="field-label" for="su-name">Ditt namn</label>
+          <input class="input" type="text" id="su-name" placeholder="Förnamn Efternamn" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="su-email">E-post</label>
+          <input class="input" type="email" id="su-email" placeholder="din@email.se" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="su-pw">Lösenord</label>
+          <input class="input" type="password" id="su-pw" placeholder="Minst 6 tecken" autocomplete="new-password" />
+        </div>
+        <button class="btn btn-primary btn-full" id="signup-btn">Skapa konto</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Neighbourhood -->
+    <div id="step-2" style="display:none">
+      <div class="onboard-step-label">Steg 2 av 4</div>
+      <div class="onboard-heading">Välj din stadsdel</div>
+      <div class="alert alert-error" id="step2-error"></div>
+      <div class="nh-grid" id="nh-grid"></div>
+      <div style="height:16px"></div>
+      <button class="btn btn-primary btn-full" id="step2-btn" disabled>Nästa →</button>
+    </div>
+
+    <!-- Step 3: Goal type -->
+    <div id="step-3" style="display:none">
+      <div class="onboard-step-label">Steg 3 av 4</div>
+      <div class="onboard-heading">Vad är ditt mål?</div>
+      <div class="alert alert-error" id="step3-error"></div>
+      <div class="goal-type-grid">
+        <button class="goal-type-btn" data-goal="train_more">
+          <span class="gt-icon">🏋️</span>
+          <span class="gt-text">
+            <span class="gt-name">Träna mer</span>
+            <span class="gt-sub">Sätt ett veckomål för träningspass</span>
+          </span>
+        </button>
+        <button class="goal-type-btn" data-goal="run_more">
+          <span class="gt-icon">🏃</span>
+          <span class="gt-text">
+            <span class="gt-name">Spring mer</span>
+            <span class="gt-sub">Sätt ett veckomål för löpminuter</span>
+          </span>
+        </button>
+        <button class="goal-type-btn" data-goal="lose_weight">
+          <span class="gt-icon">⚖️</span>
+          <span class="gt-text">
+            <span class="gt-name">Gå ner i vikt</span>
+            <span class="gt-sub">Spåra kalorier och sätt viktmål</span>
+          </span>
+        </button>
+      </div>
+      <div style="height:8px"></div>
+      <button class="btn btn-primary btn-full" id="step3-btn" disabled>Nästa →</button>
+    </div>
+
+    <!-- Step 4: Goal value + optional weight -->
+    <div id="step-4" style="display:none">
+      <div class="onboard-step-label">Steg 4 av 4</div>
+      <div class="onboard-heading" id="step4-heading">Sätt ditt mål</div>
+      <div class="alert alert-error" id="step4-error"></div>
+      <div class="field" id="goal-value-field">
+        <label class="field-label" id="goal-value-label">Värde</label>
+        <input class="input" type="number" id="goal-value-input" min="1" />
+      </div>
+      <div id="weight-wrap" style="display:none">
+        <div class="field">
+          <label class="field-label" for="current-weight">Nuvarande vikt (kg)</label>
+          <input class="input" type="number" id="current-weight" placeholder="t.ex. 80" min="30" max="300" step="0.1" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="goal-weight">Målvikt (kg)</label>
+          <input class="input" type="number" id="goal-weight" placeholder="t.ex. 72" min="30" max="300" step="0.1" />
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" id="start-btn">Sätt igång! 🚀</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+(async () => {
+  const { data: { session: existing } } = await sb.auth.getSession();
+  if (existing) { window.location.href = 'index.html'; return; }
+
+  const GOAL_CONFIG = {
+    train_more:  { label: 'Antal pass per vecka?',       min: 1,   max: 7,    default: 4,    heading: 'Hur ofta vill du träna?' },
+    run_more:    { label: 'Minuters löpning per vecka?', min: 10,  max: 9999, default: 120,  heading: 'Hur mycket vill du springa?' },
+    lose_weight: { label: 'Dagligt kalorigål (kcal)?',   min: 800, max: 9999, default: 1800, heading: 'Sätt kalorigål och vikt' },
+  };
+
+  let currentUser = null;
+  let selectedNhId = null;
+  let selectedGoal = null;
+  let signupName = '';
+
+  function setProgress(pct) {
+    const bar = document.getElementById('progress-bar');
+    bar.style.visibility = pct > 0 ? 'visible' : 'hidden';
+    document.getElementById('progress-fill').style.width = pct + '%';
+  }
+
+  function showStep(n) {
+    [1,2,3,4].forEach(i => {
+      document.getElementById('step-' + i).style.display = i === n ? 'block' : 'none';
+    });
+    const pcts = { 1: 0, 2: 25, 3: 50, 4: 75 };
+    setProgress(pcts[n] || 0);
+  }
+
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg; el.classList.add('show');
+  }
+  function hideError(id) { document.getElementById(id).classList.remove('show'); }
+
+  function setLoading(btn, loading, label) {
+    btn.disabled = loading;
+    btn.textContent = loading ? label + '…' : label;
+  }
+
+  // Mode toggle
+  function switchMode(mode) {
+    const isLogin = mode === 'login';
+    document.getElementById('login-form').style.display  = isLogin ? 'block' : 'none';
+    document.getElementById('signup-form').style.display = isLogin ? 'none'  : 'block';
+    document.getElementById('mode-login-btn').classList.toggle('active', isLogin);
+    document.getElementById('mode-signup-btn').classList.toggle('active', !isLogin);
+    ['login-error','signup-error','signup-confirm'].forEach(hideError);
+  }
+  document.getElementById('mode-login-btn').addEventListener('click', () => switchMode('login'));
+  document.getElementById('mode-signup-btn').addEventListener('click', () => switchMode('signup'));
+
+  // Login
+  async function doLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pw    = document.getElementById('login-pw').value;
+    hideError('login-error');
+    if (!email) { showError('login-error', 'Ange din e-postadress.'); return; }
+    if (!pw)    { showError('login-error', 'Ange ditt lösenord.'); return; }
+    const btn = document.getElementById('login-btn');
+    setLoading(btn, true, 'Loggar in');
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) {
+      showError('login-error', error.message === 'Invalid login credentials' ? 'Fel e-post eller lösenord.' : error.message);
+      setLoading(btn, false, 'Logga in');
+    } else {
+      window.location.href = 'index.html';
+    }
+  }
+  document.getElementById('login-btn').addEventListener('click', doLogin);
+  document.getElementById('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('login-pw').addEventListener('keydown',    e => { if (e.key === 'Enter') doLogin(); });
+
+  // Signup
+  document.getElementById('signup-btn').addEventListener('click', async () => {
+    const name  = document.getElementById('su-name').value.trim();
+    const email = document.getElementById('su-email').value.trim();
+    const pw    = document.getElementById('su-pw').value;
+    hideError('signup-error');
+    if (!name)         { showError('signup-error', 'Ange ditt namn.'); return; }
+    if (!email)        { showError('signup-error', 'Ange en e-postadress.'); return; }
+    if (pw.length < 6) { showError('signup-error', 'Lösenordet måste vara minst 6 tecken.'); return; }
+
+    const btn = document.getElementById('signup-btn');
+    setLoading(btn, true, 'Skapar konto');
+    const { data, error } = await sb.auth.signUp({ email, password: pw });
+    setLoading(btn, false, 'Skapa konto');
+
+    if (error) { showError('signup-error', error.message); return; }
+
+    signupName = name;
+    if (data.session) {
+      currentUser = data.user;
+      showStep(2);
+    } else {
+      const el = document.getElementById('signup-confirm');
+      el.textContent = 'Kolla din e-post för en bekräftelselänk!';
+      el.classList.add('show');
+    }
+  });
+
+  // Step 2: Neighbourhood
+  const nhGrid = document.getElementById('nh-grid');
+  NEIGHBOURHOODS.forEach(nh => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'nh-option';
+    btn.dataset.id = nh.id;
+    btn.innerHTML = `<span class="nh-color-dot" style="background:${nh.color}"></span>${nh.name}`;
+    btn.addEventListener('click', () => {
+      selectedNhId = nh.id;
+      nhGrid.querySelectorAll('.nh-option').forEach(b =>
+        b.classList.toggle('selected', Number(b.dataset.id) === nh.id)
+      );
+      document.getElementById('step2-btn').disabled = false;
+      hideError('step2-error');
+    });
+    nhGrid.appendChild(btn);
+  });
+
+  document.getElementById('step2-btn').addEventListener('click', () => {
+    if (!selectedNhId) { showError('step2-error', 'Välj en stadsdel.'); return; }
+    showStep(3);
+  });
+
+  // Step 3: Goal type
+  document.querySelectorAll('.goal-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedGoal = btn.dataset.goal;
+      document.querySelectorAll('.goal-type-btn').forEach(b =>
+        b.classList.toggle('selected', b === btn)
+      );
+      document.getElementById('step3-btn').disabled = false;
+      hideError('step3-error');
+    });
+  });
+
+  document.getElementById('step3-btn').addEventListener('click', () => {
+    if (!selectedGoal) { showError('step3-error', 'Välj ett mål.'); return; }
+    const cfg = GOAL_CONFIG[selectedGoal];
+    document.getElementById('step4-heading').textContent = cfg.heading;
+    document.getElementById('goal-value-label').textContent = cfg.label;
+    const input = document.getElementById('goal-value-input');
+    input.value = cfg.default;
+    input.min   = cfg.min;
+    input.max   = cfg.max;
+    document.getElementById('weight-wrap').style.display = selectedGoal === 'lose_weight' ? 'block' : 'none';
+    showStep(4);
+  });
+
+  // Step 4: Save profile
+  document.getElementById('start-btn').addEventListener('click', async () => {
+    hideError('step4-error');
+    const goalValue = parseFloat(document.getElementById('goal-value-input').value);
+    if (!goalValue || goalValue <= 0) { showError('step4-error', 'Ange ett giltigt värde.'); return; }
+
+    if (!currentUser) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) { currentUser = session.user; }
+      else { showError('step4-error', 'Sessionen gick ut. Logga in igen.'); showStep(1); return; }
+    }
+
+    const payload = {
+      id:               currentUser.id,
+      username:         signupName || currentUser.email.split('@')[0],
+      neighbourhood_id: selectedNhId,
+      goal_type:        selectedGoal,
+      goal_value:       goalValue,
+    };
+
+    if (selectedGoal === 'lose_weight') {
+      const cw = parseFloat(document.getElementById('current-weight').value);
+      const gw = parseFloat(document.getElementById('goal-weight').value);
+      if (cw > 0) payload.current_weight = cw;
+      if (gw > 0) payload.goal_weight = gw;
+    }
+
+    const btn = document.getElementById('start-btn');
+    setLoading(btn, true, 'Sparar');
+    const { error } = await sb.from('profiles').upsert(payload);
+    if (error) {
+      showError('step4-error', 'Kunde inte spara: ' + error.message);
+      setLoading(btn, false, 'Sätt igång! 🚀');
+    } else {
+      window.location.href = 'index.html';
+    }
+  });
+
+  showStep(1);
+})();
+</script>
+</body>
+</html>

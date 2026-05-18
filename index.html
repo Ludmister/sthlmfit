@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SthlmFit</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="screen">
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-logo">Sthlm<span>Fit</span></div>
+      <span class="nh-badge" id="nh-badge">…</span>
+    </div>
+  </div>
+
+  <div class="page-content" id="content">
+    <div class="spinner"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab active" onclick="location.href='index.html'">
+      <span class="icon">🏠</span>Dashboard
+    </button>
+    <a class="nav-tab-log" href="log.html">
+      <span class="icon">＋</span>Logga
+    </a>
+    <button class="nav-tab" onclick="location.href='leaderboard.html'">
+      <span class="icon">🏆</span>Tävling
+    </button>
+    <button class="nav-tab" onclick="location.href='profile.html'">
+      <span class="icon">👤</span>Profil
+    </button>
+  </nav>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+(async () => {
+  const user = await requireAuth();
+  if (!user) return;
+
+  const profile = await getProfile(user.id).catch(() => null);
+  document.getElementById('nh-badge').textContent = profile?.neighbourhoods?.name ?? '–';
+
+  if (!profile) {
+    document.getElementById('content').innerHTML =
+      '<div class="card"><p style="color:var(--text-muted)">Ingen profil hittad. Logga ut och skapa konto igen.</p></div>';
+    return;
+  }
+
+  // ── Goal card ──────────────────────────────────────────────────────────
+  async function buildGoalCard() {
+    const type   = profile.goal_type;
+    const target = profile.goal_value;
+    let pct = 0, label = '', detail = '', meta = '', isOver = false;
+
+    if (type === 'lose_weight') {
+      const { data: meals } = await sb.from('meals')
+        .select('calories').eq('user_id', user.id).eq('logged_date', getTodayStr());
+      const total = (meals || []).reduce((s, m) => s + m.calories, 0);
+      pct    = Math.min(100, Math.round(total / target * 100));
+      isOver = total > target;
+      label  = 'Viktminskning';
+      detail = `${total.toLocaleString('sv-SE')} av ${target.toLocaleString('sv-SE')} kcal idag`;
+      meta   = isOver
+        ? `${(total - target).toLocaleString('sv-SE')} kcal över`
+        : `${(target - total).toLocaleString('sv-SE')} kcal kvar`;
+
+    } else if (type === 'run_more') {
+      const ws = formatDate(getWeekStart());
+      const { data: wk } = await sb.from('workouts')
+        .select('duration').eq('user_id', user.id).eq('activity', 'run').gte('created_at', ws);
+      const mins = (wk || []).reduce((s, w) => s + w.duration, 0);
+      pct    = Math.min(100, Math.round(mins / target * 100));
+      label  = 'Spring mer';
+      detail = `${mins} av ${target} min löpning denna vecka`;
+      meta   = pct >= 100 ? 'Veckomål uppnått! 🎉' : `${target - mins} min kvar`;
+
+    } else if (type === 'train_more') {
+      const ws = formatDate(getWeekStart());
+      const { data: wk } = await sb.from('workouts')
+        .select('id').eq('user_id', user.id).gte('created_at', ws);
+      const count = (wk || []).length;
+      pct    = Math.min(100, Math.round(count / target * 100));
+      label  = 'Träna mer';
+      detail = `${count} av ${target} pass denna vecka`;
+      meta   = pct >= 100 ? 'Veckomål uppnått! 🎉' : `${target - count} pass kvar`;
+    }
+
+    const calLink = type === 'lose_weight'
+      ? '<a href="calories.html" style="color:var(--green);font-weight:700">Spåra kalorier →</a>'
+      : '';
+
+    return { pct, html: `
+      <div class="goal-card" data-pct="${pct}">
+        <div class="goal-name">${label}</div>
+        <div class="goal-pct">${pct}<span style="font-size:22px;font-weight:600;color:var(--text-muted)">%</span></div>
+        <div class="goal-detail">${detail}</div>
+        <div class="progress-track">
+          <div class="progress-fill${isOver ? ' over' : ''}" id="goal-fill" style="width:0%"></div>
+        </div>
+        <div class="goal-meta"><span>${meta}</span>${calLink}</div>
+      </div>` };
+  }
+
+  // ── Streak card ────────────────────────────────────────────────────────
+  async function buildStreakCard() {
+    const { data: workouts } = await sb.from('workouts')
+      .select('created_at').eq('user_id', user.id).order('created_at', { ascending: false });
+
+    const trained  = new Set((workouts || []).map(w => w.created_at.split('T')[0]));
+    const todayISO = getTodayStr();
+    const today    = new Date();
+    const labels   = ['M','T','O','T','F','L','S'];
+
+    const dots = getWeekDays().map((d, i) => {
+      const iso     = formatDate(d);
+      const isToday = iso === todayISO;
+      const isFuture = d > today;
+      const done    = !isFuture && trained.has(iso);
+      let cls = 'streak-dot';
+      if (done)    cls += ' done';
+      if (isToday) cls += ' today';
+      return `<div class="streak-cell">
+        <span class="streak-day-label">${labels[i]}</span>
+        <div class="${cls}">${done ? '✓' : ''}</div>
+      </div>`;
+    }).join('');
+
+    let streak = 0;
+    const check = new Date(today);
+    if (!trained.has(todayISO)) check.setDate(check.getDate() - 1);
+    while (trained.has(formatDate(check))) { streak++; check.setDate(check.getDate() - 1); }
+
+    return `
+      <div class="card">
+        <div class="streak-header">
+          <div>
+            <div class="card-label">STREAK</div>
+            <div class="streak-num${streak > 0 ? ' active' : ''}">${streak}</div>
+            <div class="streak-label">dagar i rad</div>
+          </div>
+          <div class="streak-flame">${streak > 0 ? '🔥' : '💤'}</div>
+        </div>
+        <div class="streak-row">${dots}</div>
+      </div>`;
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────
+  async function render() {
+    const [{ pct, html: goalHtml }, streakHtml] = await Promise.all([
+      buildGoalCard(),
+      buildStreakCard(),
+    ]);
+
+    const { data: weekData } = await sb.from('workouts')
+      .select('points').eq('user_id', user.id)
+      .gte('created_at', formatDate(getWeekStart()));
+    const weekPts = (weekData || []).reduce((s, w) => s + (w.points || 0), 0);
+
+    const name = profile.username || user.email.split('@')[0];
+
+    document.getElementById('content').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0 2px">
+        <div>
+          <div style="font-size:19px;font-weight:800;color:var(--text);line-height:1.2">${name}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${profile.neighbourhoods?.name ?? '–'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:900;color:var(--green);line-height:1">${weekPts}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.6px;text-transform:uppercase;margin-top:2px">Poäng denna vecka</div>
+        </div>
+      </div>
+      ${goalHtml}
+      ${streakHtml}
+    `;
+
+    // Animate progress bar
+    requestAnimationFrame(() => setTimeout(() => {
+      const fill = document.getElementById('goal-fill');
+      if (fill) fill.style.width = pct + '%';
+    }, 80));
+  }
+
+  await render();
+
+  // Realtime: re-render streak when a new workout is inserted
+  sb.channel('index-updates')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'workouts',
+        filter: `user_id=eq.${user.id}` }, render)
+    .subscribe();
+})();
+</script>
+</body>
+</html>

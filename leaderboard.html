@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SthlmFit – Tävling</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="screen">
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-logo">Sthlm<span>Fit</span></div>
+      <span class="nh-badge" id="nh-badge">…</span>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="card">
+      <div class="lb-header">
+        <div class="card-title" style="margin-bottom:0">Stadsdelstävlingen</div>
+        <div class="live-badge"><div class="live-dot"></div>&nbsp;Live</div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Poäng återställs varje måndag midnatt.</p>
+      <div id="lb-list"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab" onclick="location.href='index.html'">
+      <span class="icon">🏠</span>Dashboard
+    </button>
+    <a class="nav-tab-log" href="log.html">
+      <span class="icon">＋</span>Logga
+    </a>
+    <button class="nav-tab active" onclick="location.href='leaderboard.html'">
+      <span class="icon">🏆</span>Tävling
+    </button>
+    <button class="nav-tab" onclick="location.href='profile.html'">
+      <span class="icon">👤</span>Profil
+    </button>
+  </nav>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+(async () => {
+  const user = await requireAuth();
+  if (!user) return;
+
+  const profile = await getProfile(user.id).catch(() => null);
+  document.getElementById('nh-badge').textContent = profile?.neighbourhoods?.name ?? '–';
+
+  async function render() {
+    const { data } = await sb.from('neighbourhood_leaderboard').select('*');
+    const entries  = data || [];
+    const container = document.getElementById('lb-list');
+
+    const allZero = entries.every(e => !(e.weekly_points > 0));
+    if (!entries.length || allZero) {
+      container.innerHTML = `<div class="lb-empty">
+        🏙️ Inga poäng loggade ännu denna vecka.<br>
+        Logga ett träningspass och sätt igång tävlingen!
+      </div>`;
+      return;
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    container.innerHTML = entries.map((e, i) => {
+      const nb    = NEIGHBOURHOODS.find(n => n.id === e.id);
+      const color = e.color || nb?.color || '#1D9E75';
+      const mine  = profile && e.id === profile.neighbourhood_id;
+      const rankHtml = i < 3
+        ? `<div class="lb-rank r${i+1}">${medals[i]}</div>`
+        : `<div class="lb-rank">${i+1}</div>`;
+      return `<div class="lb-row${mine ? ' mine' : ''}">
+        ${rankHtml}
+        <div class="lb-dot" style="background:${color}"></div>
+        <div class="lb-name">${e.name}</div>
+        <div class="lb-members">${e.active_members || 0} aktiva</div>
+        <div class="lb-pts">${(e.weekly_points || 0).toLocaleString('sv-SE')} pts</div>
+      </div>`;
+    }).join('');
+  }
+
+  await render();
+
+  sb.channel('lb-live')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'workouts' }, render)
+    .subscribe();
+})();
+</script>
+</body>
+</html>

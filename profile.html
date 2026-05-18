@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SthlmFit – Profil</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="screen">
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-logo">Sthlm<span>Fit</span></div>
+      <button class="topbar-logout" id="logout-topbar">Logga ut</button>
+    </div>
+  </div>
+
+  <div class="page-content" id="content">
+    <div class="spinner"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab" onclick="location.href='index.html'">
+      <span class="icon">🏠</span>Dashboard
+    </button>
+    <a class="nav-tab-log" href="log.html">
+      <span class="icon">＋</span>Logga
+    </a>
+    <button class="nav-tab" onclick="location.href='leaderboard.html'">
+      <span class="icon">🏆</span>Tävling
+    </button>
+    <button class="nav-tab active" onclick="location.href='profile.html'">
+      <span class="icon">👤</span>Profil
+    </button>
+  </nav>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+(async () => {
+  const user = await requireAuth();
+  if (!user) return;
+
+  const profile = await getProfile(user.id).catch(() => null);
+
+  // Stats
+  const weekStart = formatDate(getWeekStart());
+  const [{ data: weekWorkouts }, { data: allWorkouts }] = await Promise.all([
+    sb.from('workouts').select('points').eq('user_id', user.id).gte('created_at', weekStart),
+    sb.from('workouts').select('points').eq('user_id', user.id),
+  ]);
+  const weekPts  = (weekWorkouts  || []).reduce((s, w) => s + (w.points || 0), 0);
+  const totalPts = (allWorkouts   || []).reduce((s, w) => s + (w.points || 0), 0);
+
+  // Goal progress
+  let goalHtml = '';
+  const type   = profile?.goal_type;
+  const target = profile?.goal_value;
+  if (type && target) {
+    let current = 0, label = '', detail = '';
+
+    if (type === 'lose_weight') {
+      const { data: meals } = await sb.from('meals')
+        .select('calories').eq('user_id', user.id).eq('logged_date', getTodayStr());
+      current = (meals || []).reduce((s, m) => s + m.calories, 0);
+      label   = 'Viktminskning';
+      detail  = `${current.toLocaleString('sv-SE')} / ${target.toLocaleString('sv-SE')} kcal idag`;
+
+    } else if (type === 'run_more') {
+      const { data: wk } = await sb.from('workouts')
+        .select('duration').eq('user_id', user.id).eq('activity', 'run').gte('created_at', weekStart);
+      current = (wk || []).reduce((s, w) => s + w.duration, 0);
+      label   = 'Spring mer';
+      detail  = `${current} / ${target} min denna vecka`;
+
+    } else if (type === 'train_more') {
+      const { data: wk } = await sb.from('workouts')
+        .select('id').eq('user_id', user.id).gte('created_at', weekStart);
+      current = (wk || []).length;
+      label   = 'Träna mer';
+      detail  = `${current} / ${target} pass denna vecka`;
+    }
+
+    const pct = Math.min(100, Math.round(current / target * 100));
+    const isOver = type === 'lose_weight' && current > target;
+
+    goalHtml = `
+      <div class="goal-card" data-pct="${pct}">
+        <div class="goal-name">${label}</div>
+        <div class="goal-pct">${pct}<span style="font-size:20px;font-weight:600;color:var(--text-muted)">%</span></div>
+        <div class="goal-detail">${detail}</div>
+        <div class="progress-track">
+          <div class="progress-fill${isOver ? ' over' : ''}" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }
+
+  const name       = profile?.username || user.email.split('@')[0];
+  const nhName     = profile?.neighbourhoods?.name ?? '–';
+  const initials   = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div class="profile-avatar">${initials}</div>
+        <div>
+          <div style="font-size:20px;font-weight:800;line-height:1.2">${name}</div>
+          <span class="nh-badge" style="margin-top:7px;display:inline-flex">${nhName}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-value">${weekPts}</div>
+        <div class="stat-label">Poäng denna vecka</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${totalPts}</div>
+        <div class="stat-label">Totalt antal poäng</div>
+      </div>
+    </div>
+
+    ${goalHtml}
+
+    <button class="btn btn-outline btn-full" id="logout-btn">Logga ut</button>
+  `;
+
+  async function doLogout() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
+  document.getElementById('logout-topbar').addEventListener('click', doLogout);
+  document.getElementById('logout-btn').addEventListener('click', doLogout);
+})();
+</script>
+</body>
+</html>

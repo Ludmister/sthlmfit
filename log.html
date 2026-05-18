@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SthlmFit – Logga träning</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="screen">
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <button class="topbar-back" onclick="location.href='index.html'">← Tillbaka</button>
+      <div class="topbar-title">Logga träning</div>
+      <div style="width:80px"></div>
+    </div>
+  </div>
+
+  <div class="page-content">
+
+    <div class="card">
+      <div class="card-label">Aktivitet</div>
+      <div class="activity-grid" id="activity-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Längd</div>
+      <div class="duration-big" id="dur-val">30</div>
+      <div class="duration-unit">minuter</div>
+      <input type="range" id="dur-slider" min="5" max="180" step="5" value="30" />
+    </div>
+
+    <div class="card">
+      <div class="card-label">Intensitet</div>
+      <div class="intensity-grid">
+        <button class="intensity-btn" data-level="low">🧘 Lugn</button>
+        <button class="intensity-btn selected" data-level="medium">⚡ Medel</button>
+        <button class="intensity-btn" data-level="high">🔥 Intensiv</button>
+      </div>
+    </div>
+
+    <div class="pts-preview">
+      <div class="pts-number" id="pts-num">–</div>
+      <div class="pts-label">poäng för dig och din stadsdel</div>
+    </div>
+
+    <div class="contribution" id="contribution" style="display:none">
+      <div class="contribution-text" id="contribution-text"></div>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="submit-btn">Logga träning</button>
+
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab" onclick="location.href='index.html'">
+      <span class="icon">🏠</span>Dashboard
+    </button>
+    <a class="nav-tab-log active" href="log.html">
+      <span class="icon">＋</span>Logga
+    </a>
+    <button class="nav-tab" onclick="location.href='leaderboard.html'">
+      <span class="icon">🏆</span>Tävling
+    </button>
+    <button class="nav-tab" onclick="location.href='profile.html'">
+      <span class="icon">👤</span>Profil
+    </button>
+  </nav>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+(async () => {
+  const user = await requireAuth();
+  if (!user) return;
+
+  const profile = await getProfile(user.id).catch(() => null);
+
+  const ACTIVITIES = {
+    run:   { label: 'Löpning',  icon: '🏃' },
+    gym:   { label: 'Gym',      icon: '🏋️' },
+    walk:  { label: 'Promenad', icon: '🚶' },
+    cycle: { label: 'Cykel',    icon: '🚴' },
+    swim:  { label: 'Simning',  icon: '🏊' },
+  };
+
+  let selectedActivity  = null;
+  let selectedIntensity = 'medium';
+
+  const grid   = document.getElementById('activity-grid');
+  const slider = document.getElementById('dur-slider');
+
+  Object.entries(ACTIVITIES).forEach(([key, a]) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'activity-btn';
+    btn.dataset.key = key;
+    btn.innerHTML = `<span class="icon">${a.icon}</span><span>${a.label}</span>`;
+    btn.addEventListener('click', () => {
+      selectedActivity = key;
+      grid.querySelectorAll('.activity-btn').forEach(b =>
+        b.classList.toggle('selected', b.dataset.key === key)
+      );
+      updatePreview();
+    });
+    grid.appendChild(btn);
+  });
+
+  slider.addEventListener('input', () => {
+    document.getElementById('dur-val').textContent = slider.value;
+    updatePreview();
+  });
+
+  document.querySelectorAll('.intensity-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedIntensity = btn.dataset.level;
+      document.querySelectorAll('.intensity-btn').forEach(b =>
+        b.classList.toggle('selected', b.dataset.level === selectedIntensity)
+      );
+      updatePreview();
+    });
+  });
+
+  function updatePreview() {
+    const dur = parseInt(slider.value);
+    const pts = calculatePoints(selectedActivity || 'walk', dur, selectedIntensity);
+    document.getElementById('pts-num').textContent = pts;
+    updateContribution(pts, dur);
+  }
+
+  function updateContribution(pts, dur) {
+    const box  = document.getElementById('contribution');
+    const text = document.getElementById('contribution-text');
+    if (!selectedActivity || !profile) { box.style.display = 'none'; return; }
+
+    const type   = profile.goal_type;
+    const target = profile.goal_value;
+    const nhName = profile.neighbourhoods?.name || 'din stadsdel';
+    let msg = `+${pts} poäng till ${nhName}`;
+
+    if (type === 'train_more' && target) {
+      msg += ` · det här är 1 pass mot ditt mål på ${target} pass/vecka.`;
+    } else if (type === 'run_more' && selectedActivity === 'run' && target) {
+      msg += ` · ${dur} min löpning mot ditt mål på ${target} min/vecka.`;
+    } else if (type === 'lose_weight') {
+      const burned = Math.round(pts * 0.75);
+      msg += ` · ungefär ${burned} kcal förbrännt.`;
+    } else {
+      msg += '.';
+    }
+
+    text.textContent = msg;
+    box.style.display = 'block';
+  }
+
+  updatePreview();
+
+  document.getElementById('submit-btn').addEventListener('click', async () => {
+    if (!selectedActivity) {
+      grid.style.outline = '2px solid var(--danger)';
+      grid.style.borderRadius = '10px';
+      setTimeout(() => { grid.style.outline = ''; }, 1400);
+      return;
+    }
+
+    const dur = parseInt(slider.value);
+    const pts = calculatePoints(selectedActivity, dur, selectedIntensity);
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sparar…';
+
+    const { error } = await sb.from('workouts').insert({
+      user_id:   user.id,
+      activity:  selectedActivity,
+      duration:  dur,
+      intensity: selectedIntensity,
+      points:    pts,
+    });
+
+    if (error) {
+      console.error(error);
+      btn.disabled = false;
+      btn.textContent = 'Logga träning';
+      return;
+    }
+
+    showPtsAnimation(pts);
+    btn.textContent = '✓ Loggat!';
+    setTimeout(() => location.href = 'index.html', 1400);
+  });
+})();
+</script>
+</body>
+</html>
