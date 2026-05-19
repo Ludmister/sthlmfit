@@ -12,7 +12,6 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="topbar-wordmark">Sthlm<span>Fit</span></div>
-      <button class="link-muted" id="logout-btn" style="color:rgba(255,255,255,0.5)">Logga ut</button>
     </div>
   </div>
 
@@ -44,26 +43,21 @@
   const nhColor = profile.neighbourhoods?.color || '#1D9E75';
   const nhName  = profile.neighbourhoods?.name  || '–';
 
-  // Parallel data fetch
   const weekStart = (() => {
     const d = new Date(); const day = d.getDay();
     d.setDate(d.getDate() - (day===0?6:day-1)); d.setHours(0,0,0,0);
     return d.toISOString().split('T')[0];
   })();
 
-  const [allWoRes, weekWoRes, datesRes, stravaRes] = await Promise.all([
+  const [allWoRes, weekWoRes, datesRes] = await Promise.all([
     sb.from('workouts').select('km').eq('user_id', user.id),
     sb.from('workouts').select('km').eq('user_id', user.id).gte('logged_date', weekStart),
-    sb.from('workouts').select('logged_date').eq('user_id', user.id).order('logged_date', { ascending:false }),
-    profile.strava_connected
-      ? sb.from('strava_tokens').select('last_sync').eq('user_id', user.id).maybeSingle()
-      : Promise.resolve({ data: null }),
+    sb.from('workouts').select('logged_date').eq('user_id', user.id).order('logged_date', { ascending: false }),
   ]);
 
   const totalKm = (allWoRes.data  || []).reduce((s,w) => s+Number(w.km), 0);
   const weekKm  = (weekWoRes.data || []).reduce((s,w) => s+Number(w.km), 0);
 
-  // Streak calc
   const uniqueDates = [...new Set((datesRes.data||[]).map(w=>w.logged_date))];
   let streak = 0;
   if (uniqueDates.length > 0) {
@@ -74,33 +68,24 @@
       streak = 1;
       for (let i = 1; i < uniqueDates.length; i++) {
         const diff = Math.round((new Date(uniqueDates[i-1]) - new Date(uniqueDates[i])) / 86400000);
-        if (diff === 1) streak++;
-        else break;
+        if (diff === 1) streak++; else break;
       }
     }
-  }
-
-  // Last sync text
-  let lastSyncStr = 'Aldrig synkad';
-  if (stravaRes.data?.last_sync) {
-    const d = new Date(stravaRes.data.last_sync);
-    const isToday = d.toDateString() === new Date().toDateString();
-    lastSyncStr = 'Synkad ' + (isToday
-      ? d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}) + ' idag'
-      : d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'}));
   }
 
   document.getElementById('content').innerHTML = `
     <div class="page-padded">
 
-      <!-- Avatar + name -->
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px" class="anim-in">
-        <div style="width:60px;height:60px;border-radius:50%;background:${nhColor}20;border:2.5px solid ${nhColor}50;
-             display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:${nhColor};flex-shrink:0">
+      <!-- Name + neighbourhood -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        <div style="width:56px;height:56px;border-radius:50%;
+             background:${nhColor}20;border:2px solid ${nhColor}50;
+             display:flex;align-items:center;justify-content:center;
+             font-size:22px;font-weight:900;color:${nhColor};flex-shrink:0">
           ${(profile.name||'?')[0].toUpperCase()}
         </div>
         <div>
-          <div style="font-size:20px;font-weight:800;line-height:1.2">${profile.name||'(Ej satt)'}</div>
+          <div style="font-size:19px;font-weight:800;line-height:1.2">${profile.name||'(Ej satt)'}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
             <div style="width:8px;height:8px;border-radius:50%;background:${nhColor}"></div>
             <div style="font-size:13px;color:var(--text-muted);font-weight:600">${nhName}</div>
@@ -124,8 +109,27 @@
         </div>
       </div>
 
+      <!-- Strava -->
+      <div class="card" style="margin-bottom:16px">
+        ${profile.strava_connected ? `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <i class="ti ti-brand-strava" style="color:var(--strava);font-size:18px"></i>
+              <span style="font-size:14px;font-weight:700;color:var(--green)">Strava kopplad</span>
+            </div>
+            <button id="strava-disconnect-btn" style="font-size:13px;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:var(--font)">
+              Koppla från
+            </button>
+          </div>
+        ` : `
+          <a href="${STRAVA_AUTH_URL}" class="btn btn-strava" style="text-decoration:none">
+            <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
+          </a>
+        `}
+      </div>
+
       <!-- Edit profile -->
-      <div class="card" style="margin-bottom:12px">
+      <div class="card" style="margin-bottom:16px">
         <div class="card-title">Redigera profil</div>
         <div class="field">
           <label class="field-label">Namn</label>
@@ -133,49 +137,18 @@
         </div>
         <div class="field-label" style="margin-bottom:8px">Stadsdel</div>
         <div class="nh-grid" id="nh-grid"></div>
-        <button class="btn btn-primary" id="save-btn" style="margin-top:16px">
+        <button class="btn btn-primary" id="save-btn" style="margin-top:14px">
           <i class="ti ti-check"></i> Spara ändringar
         </button>
-        <div class="alert" id="save-msg" style="margin-top:10px"></div>
-      </div>
-
-      <!-- Strava -->
-      <div class="card" style="margin-bottom:12px">
-        <div class="card-title">
-          <i class="ti ti-brand-strava" style="color:var(--strava)"></i>Strava
-        </div>
-        ${profile.strava_connected ? `
-          <div class="strava-row" style="margin-bottom:12px">
-            <div class="strava-icon-circle">
-              <i class="ti ti-brand-strava" style="color:var(--strava);font-size:20px"></i>
-            </div>
-            <div class="strava-info">
-              <div class="strava-info-title">${profile.strava_athlete_name||'Strava-användare'}</div>
-              <div class="strava-info-sub">${lastSyncStr}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-outline btn-sm" id="strava-sync-btn" style="flex:1">
-              <i class="ti ti-refresh"></i> Synka nu
-            </button>
-            <button class="btn btn-outline btn-sm" id="strava-disconnect-btn"
-              style="flex:1;color:var(--text-muted)">Koppla från</button>
-          </div>
-          <div class="alert" id="strava-msg" style="margin-top:8px"></div>
-        ` : `
-          <div style="font-size:14px;color:var(--text-muted);font-weight:500;margin-bottom:14px;line-height:1.5">
-            Koppla ditt Strava-konto för att synka löppass automatiskt.
-          </div>
-          <a href="${STRAVA_AUTH_URL}" class="btn btn-strava" style="text-decoration:none">
-            <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
-          </a>
-        `}
+        <div class="alert" id="save-msg" style="margin-top:8px"></div>
       </div>
 
       <!-- Logout -->
-      <button class="btn btn-outline" id="logout-btn2">
-        <i class="ti ti-logout"></i> Logga ut
-      </button>
+      <div style="text-align:center;padding:4px 0 8px">
+        <button id="logout-btn" style="font-size:14px;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:var(--font);font-weight:500">
+          Logga ut
+        </button>
+      </div>
 
     </div>
   `;
@@ -194,7 +167,6 @@
     grid.appendChild(card);
   });
 
-  // Save profile
   document.getElementById('save-btn').addEventListener('click', async () => {
     const name = document.getElementById('edit-name').value.trim();
     const btn  = document.getElementById('save-btn');
@@ -210,42 +182,20 @@
     btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Spara ändringar';
   });
 
-  // Strava: sync
-  const strSyncBtn = document.getElementById('strava-sync-btn');
-  if (strSyncBtn) {
-    strSyncBtn.addEventListener('click', async () => {
-      const msg = document.getElementById('strava-msg');
-      strSyncBtn.disabled = true; strSyncBtn.innerHTML = '<i class="ti ti-loader-2 spin-icon"></i> Synkar…';
-      const { data:sd, error:se } = await sb.functions.invoke('strava-sync');
-      strSyncBtn.disabled = false; strSyncBtn.innerHTML = '<i class="ti ti-refresh"></i> Synka nu';
-      if (se || sd?.error) {
-        msg.textContent = sd?.error || se?.message; msg.className = 'alert alert-error show';
-      } else if (sd?.skipped) {
-        msg.textContent = 'Redan synkad nyligen.'; msg.className = 'alert alert-success show';
-      } else {
-        msg.textContent = sd.synced > 0 ? `${sd.synced} nya löppass synkades!` : 'Inga nya löppass.';
-        msg.className = 'alert alert-success show';
-      }
-      setTimeout(() => { msg.className = 'alert'; }, 3000);
-    });
-  }
-
-  // Strava: disconnect
-  const strDisBtn = document.getElementById('strava-disconnect-btn');
-  if (strDisBtn) {
-    strDisBtn.addEventListener('click', async () => {
+  const disBtn = document.getElementById('strava-disconnect-btn');
+  if (disBtn) {
+    disBtn.addEventListener('click', async () => {
       if (!confirm('Koppla från Strava? Dina loggade löppass påverkas inte.')) return;
-      strDisBtn.disabled = true;
+      disBtn.disabled = true;
       await sb.from('strava_tokens').delete().eq('user_id', user.id);
       await sb.from('profiles').update({ strava_connected: false, strava_athlete_name: null }).eq('id', user.id);
       location.reload();
     });
   }
 
-  // Logout
-  async function doLogout() { await sb.auth.signOut(); location.href = 'login.html'; }
-  document.getElementById('logout-btn').addEventListener('click', doLogout);
-  document.getElementById('logout-btn2').addEventListener('click', doLogout);
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await sb.auth.signOut(); location.href = 'login.html';
+  });
 })();
 </script>
 </body>

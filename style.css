@@ -209,7 +209,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 .topbar-wordmark span { color: var(--green); }
 
 /* ── Dashboard Hero ──────────────────────────────────── */
-.hero { background: var(--navy); padding: 18px 20px 22px; position: relative; }
+.hero { background: var(--navy); padding: 16px 18px 18px; position: relative; }
 .hero-grid {
   display: grid; grid-template-columns: 1fr auto 1fr;
   align-items: center; gap: 8px; margin-bottom: 12px;
@@ -245,15 +245,15 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 
 /* ── Page content area ───────────────────────────────── */
 .page-content {
-  flex: 1; padding: 14px 14px calc(var(--nav-h) + var(--fab-rise) + 20px);
-  display: flex; flex-direction: column; gap: 12px;
+  flex: 1; padding: 10px 12px calc(var(--nav-h) + var(--fab-rise) + 16px);
+  display: flex; flex-direction: column; gap: 10px;
 }
-.page-padded { padding: 16px 14px calc(var(--nav-h) + var(--fab-rise) + 20px); }
+.page-padded { padding: 12px 12px calc(var(--nav-h) + var(--fab-rise) + 16px); }
 
 /* ── Section header ──────────────────────────────────── */
 .section-head {
-  font-size: 17px; font-weight: 800; color: var(--text);
-  letter-spacing: -0.3px; margin-bottom: 10px;
+  font-size: 15px; font-weight: 800; color: var(--text);
+  letter-spacing: -0.2px; margin-bottom: 8px;
 }
 
 /* ── Leaderboard ─────────────────────────────────────── */
@@ -329,7 +329,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
 }
-#map { height: 280px; }
+#map { height: 260px; }
 .leaflet-container { font-family: var(--font) !important; }
 .map-popup-name { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
 .map-popup-km   { font-size: 20px; font-weight: 900; color: var(--green); line-height: 1; }

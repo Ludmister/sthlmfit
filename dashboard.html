@@ -338,7 +338,7 @@ let mapPulseInt = null;
     // Map
     const kmMap = Object.fromEntries(entries.map((e,i) => [e.id, { km: e.total_km, runners: e.active_runners, rank: i+1 }]));
     mapInst = L.map('map', { zoomControl:false, scrollWheelZoom:false, attributionControl:true }).setView([59.329,18.068],11);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution:'&copy; OpenStreetMap &copy; CartoDB', maxZoom:16,
     }).addTo(mapInst);
 
@@ -350,7 +350,7 @@ let mapPulseInt = null;
       const d = kmMap[nhId] || { km:0, runners:0, rank:'-' };
       const isMine = nhId === myNhId;
       const layer = L.geoJSON(f, {
-        style: { fillColor:kmColor(d.km), fillOpacity:0.75, color:isMine?myNhColor:'#fff', weight:isMine?2.5:1 }
+        style: { fillColor:kmColor(d.km), fillOpacity:0.6, color:isMine?myNhColor:'rgba(255,255,255,0.25)', weight:isMine?2.5:0.8 }
       }).addTo(mapInst);
       layer.bindPopup(`
         <div class="map-popup-name">${nb.name}</div>
@@ -358,8 +358,8 @@ let mapPulseInt = null;
         <div class="map-popup-rank">#${d.rank} denna vecka</div>
         <div class="map-popup-sub">${d.runners} aktiva löpare</div>
       `, { maxWidth:180 });
-      layer.on('mouseover', () => layer.setStyle({ fillOpacity:0.9 }));
-      layer.on('mouseout',  () => layer.setStyle({ fillOpacity:0.75 }));
+      layer.on('mouseover', () => layer.setStyle({ fillOpacity:0.8 }));
+      layer.on('mouseout',  () => layer.setStyle({ fillOpacity:0.6 }));
       if (isMine) myLayer = layer;
     });
 
