@@ -78,7 +78,7 @@
            style="background:#FC4C02;border:none;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;margin-bottom:12px">
           <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
         </a>
-        <a href="log.html" class="skip-link" style="display:block;text-align:center">Hoppa över — logga manuellt istället</a>
+        <a href="dashboard.html" class="skip-link" style="display:block;text-align:center">Hoppa över — gå till kartan</a>
       </div>
     </div>
   </div>
@@ -93,7 +93,7 @@
 
   // Already has profile → log
   const existing = await getProfile(user.id);
-  if (existing) { location.href = 'log.html'; return; }
+  if (existing) { location.href = 'dashboard.html'; return; }
 
   let selectedNh = null;
 

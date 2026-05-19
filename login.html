@@ -92,7 +92,7 @@
 <script>
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
-  if (session) { const p = await getProfile(session.user.id); location.href = p ? 'log.html' : 'onboarding.html'; }
+  if (session) { const p = await getProfile(session.user.id); location.href = p ? 'dashboard.html' : 'onboarding.html'; }
 })();
 
 const errEl = document.getElementById('err');
@@ -118,7 +118,7 @@ async function doLogin() {
       keepalive: true,
     }).catch(() => {});
   }
-  location.href = profile ? 'log.html' : 'onboarding.html';
+  location.href = profile ? 'dashboard.html' : 'onboarding.html';
 }
 document.getElementById('login-btn').addEventListener('click', doLogin);
 ['email','password'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); }));
