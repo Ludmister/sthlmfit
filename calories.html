@@ -11,7 +11,9 @@
 
   <div class="topbar">
     <div class="topbar-inner">
-      <button class="topbar-back" onclick="location.href='index.html'">← Tillbaka</button>
+      <button class="topbar-back" onclick="location.href='index.html'">
+        <i class="ti ti-arrow-left"></i> Tillbaka
+      </button>
       <div class="topbar-title">Kalorier</div>
       <span class="nh-badge" id="nh-badge" style="font-size:11px">…</span>
     </div>
@@ -23,16 +25,16 @@
 
   <nav class="bottom-nav">
     <button class="nav-tab" onclick="location.href='index.html'">
-      <span class="icon">🏠</span>Dashboard
+      <i class="ti ti-home"></i>Dashboard
     </button>
     <a class="nav-tab-log" href="log.html">
-      <span class="icon">＋</span>Logga
+      <span class="icon"><i class="ti ti-plus"></i></span>Logga
     </a>
     <button class="nav-tab" onclick="location.href='leaderboard.html'">
-      <span class="icon">🏆</span>Tävling
+      <i class="ti ti-trophy"></i>Tävling
     </button>
     <button class="nav-tab" onclick="location.href='profile.html'">
-      <span class="icon">👤</span>Profil
+      <i class="ti ti-user"></i>Profil
     </button>
   </nav>
 
@@ -61,18 +63,17 @@
     return data || [];
   }
 
-  let meals         = await loadMeals();
+  let meals = await loadMeals();
   let searchResults = [];
 
   function totalCal(ms) { return ms.reduce((s, m) => s + m.calories, 0); }
 
-  // ── AI estimate ─────────────────────────────────────────────────────────
   async function estimateWithAI(description) {
     const { data, error } = await sb.functions.invoke('estimate-calories', {
       body: { description },
     });
     if (error) throw error;
-    return data; // { food_name, calories }
+    return data;
   }
 
   function render() {
@@ -82,7 +83,6 @@
     const todayLabel = new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' });
 
     document.getElementById('content').innerHTML = `
-      <!-- Summary card -->
       <div class="card">
         <div class="card-label">${todayLabel}</div>
         <div class="calorie-total">${total.toLocaleString('sv-SE')}
@@ -101,19 +101,17 @@
         </div>
       </div>
 
-      <!-- Add meal card -->
       <div class="card">
         <div class="card-title">Lägg till måltid</div>
 
-        <!-- AI input -->
         <div style="margin-bottom:16px">
-          <div class="field-label" style="display:block;margin-bottom:7px">
-            🤖 Beskriv vad du åt
-          </div>
+          <label class="field-label" style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <i class="ti ti-robot" style="font-size:15px;color:var(--green)"></i>
+            Beskriv vad du åt
+          </label>
           <div style="display:flex;gap:8px">
             <input type="text" class="input" id="ai-input"
-              placeholder="t.ex. 'tallrik pasta bolognese', 'smörgås med ost'"
-              style="flex:1" />
+              placeholder="t.ex. 'tallrik pasta bolognese'" style="flex:1" />
             <button class="btn btn-primary btn-sm" id="ai-btn" style="flex-shrink:0;white-space:nowrap">
               Uppskatta
             </button>
@@ -121,14 +119,8 @@
           <div id="ai-result" style="display:none;margin-top:10px"></div>
         </div>
 
-        <!-- Divider -->
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-          <span style="font-size:12px;color:var(--text-muted);font-weight:500">eller sök manuellt</span>
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-        </div>
+        <div class="section-divider"><span>eller sök manuellt</span></div>
 
-        <!-- Manual search -->
         <div class="search-wrap">
           <input type="text" class="input" id="food-input"
             placeholder="Sök mat, t.ex. 'äpple', 'pasta'…" autocomplete="off" />
@@ -136,7 +128,6 @@
         </div>
       </div>
 
-      <!-- Meal list card -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div class="card-title" style="margin:0">Dagens måltider</div>
@@ -144,26 +135,27 @@
         </div>
         <div id="meal-list">
           ${meals.length === 0
-            ? '<div class="empty">Inga måltider loggade ännu idag.</div>'
+            ? '<div class="empty"><i class="ti ti-salad" style="font-size:28px;display:block;margin-bottom:8px;color:var(--border)"></i>Inga måltider loggade ännu idag.</div>'
             : meals.map(m => `
                 <div class="meal-item">
                   <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.food_name}</span>
                   <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
                     <span class="meal-kcal">${m.calories} kcal</span>
-                    <button class="meal-delete" data-id="${m.id}">✕</button>
+                    <button class="meal-delete" data-id="${m.id}">
+                      <i class="ti ti-x"></i>
+                    </button>
                   </div>
                 </div>`).join('')}
         </div>
       </div>
     `;
 
-    // Animate calorie bar
     requestAnimationFrame(() => setTimeout(() => {
       const bar = document.getElementById('cal-bar');
       if (bar) bar.style.width = pct + '%';
     }, 80));
 
-    // ── AI button ──
+    // AI
     const aiInput  = document.getElementById('ai-input');
     const aiBtn    = document.getElementById('ai-btn');
     const aiResult = document.getElementById('ai-result');
@@ -172,11 +164,8 @@
     async function runAI() {
       const q = aiInput.value.trim();
       if (!q) { aiInput.focus(); return; }
-
-      aiBtn.disabled = true;
-      aiBtn.textContent = '…';
+      aiBtn.disabled = true; aiBtn.innerHTML = '<i class="ti ti-loader-2"></i>';
       aiResult.style.display = 'none';
-
       try {
         aiEstimate = await estimateWithAI(q);
         aiResult.innerHTML = `
@@ -185,43 +174,39 @@
             <div style="font-size:26px;font-weight:900;color:var(--green);line-height:1;margin:4px 0">
               ${aiEstimate.calories} <span style="font-size:14px;font-weight:500;color:var(--text-muted)">kcal</span>
             </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">Uppskattning av Claude AI</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;display:flex;align-items:center;gap:4px">
+              <i class="ti ti-robot" style="font-size:13px"></i> Uppskattning av Claude AI
+            </div>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-primary btn-sm" id="ai-confirm">Lägg till</button>
+              <button class="btn btn-primary btn-sm" id="ai-confirm">
+                <i class="ti ti-plus"></i> Lägg till
+              </button>
               <button class="btn btn-outline btn-sm" id="ai-cancel">Avbryt</button>
             </div>
           </div>`;
         aiResult.style.display = 'block';
-
         document.getElementById('ai-confirm').addEventListener('click', async () => {
           await sb.from('meals').insert({
-            user_id:     user.id,
-            food_name:   aiEstimate.food_name,
-            calories:    aiEstimate.calories,
-            logged_date: todayStr,
+            user_id: user.id, food_name: aiEstimate.food_name,
+            calories: aiEstimate.calories, logged_date: todayStr,
           });
-          meals = await loadMeals();
-          render();
+          meals = await loadMeals(); render();
         });
         document.getElementById('ai-cancel').addEventListener('click', () => {
-          aiResult.style.display = 'none';
-          aiInput.value = '';
-          aiEstimate = null;
+          aiResult.style.display = 'none'; aiInput.value = ''; aiEstimate = null;
         });
-
       } catch (err) {
-        aiResult.innerHTML = `<div class="alert alert-error show">${err.message || 'Kunde inte kontakta AI. Försök igen.'}</div>`;
+        aiResult.innerHTML = `<div class="alert alert-error show">${err.message || 'Kunde inte kontakta AI.'}</div>`;
         aiResult.style.display = 'block';
       } finally {
-        aiBtn.disabled = false;
-        aiBtn.textContent = 'Uppskatta';
+        aiBtn.disabled = false; aiBtn.textContent = 'Uppskatta';
       }
     }
 
     aiBtn.addEventListener('click', runAI);
     aiInput.addEventListener('keydown', e => { if (e.key === 'Enter') runAI(); });
 
-    // ── Manual search ──
+    // Manual search
     const foodInput = document.getElementById('food-input');
     const resultsEl = document.getElementById('search-results');
     let debounce;
@@ -246,9 +231,7 @@
         const res  = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=10&fields=product_name,nutriments`);
         const json = await res.json();
         searchResults = (json.products || [])
-          .filter(p => p.product_name && p.nutriments?.['energy-kcal_100g'])
-          .slice(0, 6);
-
+          .filter(p => p.product_name && p.nutriments?.['energy-kcal_100g']).slice(0, 6);
         if (!searchResults.length) {
           resultsEl.innerHTML = '<div style="padding:12px;font-size:14px;color:var(--text-muted)">Inga resultat.</div>';
           return;
@@ -262,36 +245,30 @@
           el.addEventListener('click', () => addMeal(parseInt(el.dataset.i)));
         });
       } catch {
-        resultsEl.innerHTML = '<div style="padding:12px;font-size:14px;color:var(--danger)">Kunde inte ansluta till Open Food Facts.</div>';
+        resultsEl.innerHTML = '<div style="padding:12px;font-size:14px;color:var(--danger)">Kunde inte ansluta.</div>';
       }
     }
 
-    // Delete meals
     document.querySelectorAll('.meal-delete').forEach(btn => {
       btn.addEventListener('click', async () => {
         await sb.from('meals').delete().eq('id', btn.dataset.id);
-        meals = await loadMeals();
-        render();
+        meals = await loadMeals(); render();
       });
     });
   }
 
   async function addMeal(i) {
-    const p        = searchResults[i];
-    const kcal100  = Math.round(p.nutriments['energy-kcal_100g']);
-    const grams    = parseFloat(prompt(`Hur många gram av "${p.product_name}"?`, '100'));
+    const p       = searchResults[i];
+    const kcal100 = Math.round(p.nutriments['energy-kcal_100g']);
+    const grams   = parseFloat(prompt(`Hur många gram av "${p.product_name}"?`, '100'));
     if (!grams || grams <= 0) return;
-    const kcal = Math.round(kcal100 * grams / 100);
-
     await sb.from('meals').insert({
-      user_id:     user.id,
-      food_name:   `${p.product_name} (${grams}g)`,
-      calories:    kcal,
+      user_id: user.id,
+      food_name: `${p.product_name} (${grams}g)`,
+      calories: Math.round(kcal100 * grams / 100),
       logged_date: todayStr,
     });
-
-    meals = await loadMeals();
-    render();
+    meals = await loadMeals(); render();
   }
 
   render();

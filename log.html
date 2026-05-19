@@ -11,7 +11,9 @@
 
   <div class="topbar">
     <div class="topbar-inner">
-      <button class="topbar-back" onclick="location.href='index.html'">← Tillbaka</button>
+      <button class="topbar-back" onclick="location.href='index.html'">
+        <i class="ti ti-arrow-left"></i> Tillbaka
+      </button>
       <div class="topbar-title">Logga träning</div>
       <div style="width:80px"></div>
     </div>
@@ -34,9 +36,15 @@
     <div class="card">
       <div class="card-label">Intensitet</div>
       <div class="intensity-grid">
-        <button class="intensity-btn" data-level="low">🧘 Lugn</button>
-        <button class="intensity-btn selected" data-level="medium">⚡ Medel</button>
-        <button class="intensity-btn" data-level="high">🔥 Intensiv</button>
+        <button class="intensity-btn" data-level="low">
+          <i class="ti ti-leaf"></i> Lugn
+        </button>
+        <button class="intensity-btn selected" data-level="medium">
+          <i class="ti ti-bolt"></i> Medel
+        </button>
+        <button class="intensity-btn" data-level="high">
+          <i class="ti ti-flame"></i> Intensiv
+        </button>
       </div>
     </div>
 
@@ -49,22 +57,24 @@
       <div class="contribution-text" id="contribution-text"></div>
     </div>
 
-    <button class="btn btn-primary btn-full" id="submit-btn">Logga träning</button>
+    <button class="btn btn-primary btn-full" id="submit-btn">
+      <i class="ti ti-check"></i> Logga träning
+    </button>
 
   </div>
 
   <nav class="bottom-nav">
     <button class="nav-tab" onclick="location.href='index.html'">
-      <span class="icon">🏠</span>Dashboard
+      <i class="ti ti-home"></i>Dashboard
     </button>
     <a class="nav-tab-log active" href="log.html">
-      <span class="icon">＋</span>Logga
+      <span class="icon"><i class="ti ti-plus"></i></span>Logga
     </a>
     <button class="nav-tab" onclick="location.href='leaderboard.html'">
-      <span class="icon">🏆</span>Tävling
+      <i class="ti ti-trophy"></i>Tävling
     </button>
     <button class="nav-tab" onclick="location.href='profile.html'">
-      <span class="icon">👤</span>Profil
+      <i class="ti ti-user"></i>Profil
     </button>
   </nav>
 
@@ -80,11 +90,11 @@
   const profile = await getProfile(user.id).catch(() => null);
 
   const ACTIVITIES = {
-    run:   { label: 'Löpning',  icon: '🏃' },
-    gym:   { label: 'Gym',      icon: '🏋️' },
-    walk:  { label: 'Promenad', icon: '🚶' },
-    cycle: { label: 'Cykel',    icon: '🚴' },
-    swim:  { label: 'Simning',  icon: '🏊' },
+    run:   { label: 'Löpning',  icon: 'ti-run'      },
+    gym:   { label: 'Gym',      icon: 'ti-barbell'   },
+    walk:  { label: 'Promenad', icon: 'ti-walk'      },
+    cycle: { label: 'Cykel',    icon: 'ti-bike'      },
+    swim:  { label: 'Simning',  icon: 'ti-swim'      },
   };
 
   let selectedActivity  = null;
@@ -98,7 +108,7 @@
     btn.type = 'button';
     btn.className = 'activity-btn';
     btn.dataset.key = key;
-    btn.innerHTML = `<span class="icon">${a.icon}</span><span>${a.label}</span>`;
+    btn.innerHTML = `<i class="ti ${a.icon}"></i><span>${a.label}</span>`;
     btn.addEventListener('click', () => {
       selectedActivity = key;
       grid.querySelectorAll('.activity-btn').forEach(b =>
@@ -142,7 +152,9 @@
     let msg = `+${pts} poäng till ${nhName}`;
 
     if (type === 'train_more' && target) {
-      msg += ` · det här är 1 pass mot ditt mål på ${target} pass/vecka.`;
+      msg += ` · 1 pass mot ditt mål på ${target} pass/vecka.`;
+    } else if (type === 'gain_muscle' && selectedActivity === 'gym' && target) {
+      msg += ` · 1 gympass mot ditt mål på ${target} pass/vecka.`;
     } else if (type === 'run_more' && selectedActivity === 'run' && target) {
       msg += ` · ${dur} min löpning mot ditt mål på ${target} min/vecka.`;
     } else if (type === 'lose_weight') {
@@ -170,7 +182,7 @@
     const pts = calculatePoints(selectedActivity, dur, selectedIntensity);
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
-    btn.textContent = 'Sparar…';
+    btn.innerHTML = '<i class="ti ti-loader-2"></i> Sparar…';
 
     const { error } = await sb.from('workouts').insert({
       user_id:   user.id,
@@ -183,12 +195,12 @@
     if (error) {
       console.error(error);
       btn.disabled = false;
-      btn.textContent = 'Logga träning';
+      btn.innerHTML = '<i class="ti ti-check"></i> Logga träning';
       return;
     }
 
     showPtsAnimation(pts);
-    btn.textContent = '✓ Loggat!';
+    btn.innerHTML = '<i class="ti ti-check"></i> Loggat!';
     setTimeout(() => location.href = 'index.html', 1400);
   });
 })();

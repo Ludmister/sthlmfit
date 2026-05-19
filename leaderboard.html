@@ -29,16 +29,16 @@
 
   <nav class="bottom-nav">
     <button class="nav-tab" onclick="location.href='index.html'">
-      <span class="icon">🏠</span>Dashboard
+      <i class="ti ti-home"></i>Dashboard
     </button>
     <a class="nav-tab-log" href="log.html">
-      <span class="icon">＋</span>Logga
+      <span class="icon"><i class="ti ti-plus"></i></span>Logga
     </a>
     <button class="nav-tab active" onclick="location.href='leaderboard.html'">
-      <span class="icon">🏆</span>Tävling
+      <i class="ti ti-trophy"></i>Tävling
     </button>
     <button class="nav-tab" onclick="location.href='profile.html'">
-      <span class="icon">👤</span>Profil
+      <i class="ti ti-user"></i>Profil
     </button>
   </nav>
 
@@ -54,6 +54,12 @@
   const profile = await getProfile(user.id).catch(() => null);
   document.getElementById('nh-badge').textContent = profile?.neighbourhoods?.name ?? '–';
 
+  const rankBadge = [
+    '<span style="font-size:18px;color:#F59E0B;font-weight:900">1</span>',
+    '<span style="font-size:16px;color:#9CA3AF;font-weight:900">2</span>',
+    '<span style="font-size:16px;color:#B45309;font-weight:900">3</span>',
+  ];
+
   async function render() {
     const { data } = await sb.from('neighbourhood_leaderboard').select('*');
     const entries  = data || [];
@@ -62,20 +68,20 @@
     const allZero = entries.every(e => !(e.weekly_points > 0));
     if (!entries.length || allZero) {
       container.innerHTML = `<div class="lb-empty">
-        🏙️ Inga poäng loggade ännu denna vecka.<br>
+        <i class="ti ti-confetti" style="font-size:36px;color:var(--green-100);display:block;margin-bottom:8px"></i>
+        Inga poäng loggade ännu denna vecka.<br>
         Logga ett träningspass och sätt igång tävlingen!
       </div>`;
       return;
     }
 
-    const medals = ['🥇','🥈','🥉'];
     container.innerHTML = entries.map((e, i) => {
       const nb    = NEIGHBOURHOODS.find(n => n.id === e.id);
       const color = e.color || nb?.color || '#1D9E75';
       const mine  = profile && e.id === profile.neighbourhood_id;
       const rankHtml = i < 3
-        ? `<div class="lb-rank r${i+1}">${medals[i]}</div>`
-        : `<div class="lb-rank">${i+1}</div>`;
+        ? `<div class="lb-rank">${rankBadge[i]}</div>`
+        : `<div class="lb-rank" style="font-size:14px">${i+1}</div>`;
       return `<div class="lb-row${mine ? ' mine' : ''}">
         ${rankHtml}
         <div class="lb-dot" style="background:${color}"></div>

@@ -4,16 +4,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const NEIGHBOURHOODS = [
-  { id: 1,  name: 'Södermalm',        slug: 'sodermalm',        color: '#1D9E75' },
-  { id: 2,  name: 'Vasastan',          slug: 'vasastan',          color: '#2ECC71' },
-  { id: 3,  name: 'Östermalm',         slug: 'ostermalm',         color: '#27AE60' },
-  { id: 4,  name: 'Kungsholmen',       slug: 'kungsholmen',       color: '#16A085' },
-  { id: 5,  name: 'Gamla Stan',        slug: 'gamla-stan',        color: '#1ABC9C' },
-  { id: 6,  name: 'Norrmalm',          slug: 'norrmalm',          color: '#0E8A5F' },
-  { id: 7,  name: 'Hammarby Sjöstad',  slug: 'hammarby-sjostad',  color: '#148F77' },
-  { id: 8,  name: 'Liljeholmen',       slug: 'liljeholmen',       color: '#117A65' },
-  { id: 9,  name: 'Lidingö',           slug: 'lidingo',           color: '#0D6655' },
-  { id: 10, name: 'Djurgården',        slug: 'djurgarden',        color: '#0A5040' },
+  { id: 1,  name: 'Södermalm',        slug: 'sodermalm',        color: '#1D9E75' }, // teal green
+  { id: 2,  name: 'Vasastan',          slug: 'vasastan',          color: '#84CC16' }, // lime
+  { id: 3,  name: 'Östermalm',         slug: 'ostermalm',         color: '#166534' }, // deep forest
+  { id: 4,  name: 'Kungsholmen',       slug: 'kungsholmen',       color: '#0891B2' }, // sky blue
+  { id: 5,  name: 'Gamla Stan',        slug: 'gamla-stan',        color: '#B45309' }, // ochre
+  { id: 6,  name: 'Norrmalm',          slug: 'norrmalm',          color: '#475569' }, // slate
+  { id: 7,  name: 'Hammarby Sjöstad',  slug: 'hammarby-sjostad',  color: '#0284C7' }, // water blue
+  { id: 8,  name: 'Liljeholmen',       slug: 'liljeholmen',       color: '#7C3AED' }, // purple
+  { id: 9,  name: 'Lidingö',           slug: 'lidingo',           color: '#38BDF8' }, // lake
+  { id: 10, name: 'Djurgården',        slug: 'djurgarden',        color: '#4D7C0F' }, // moss
 ];
 
 function calculatePoints(activity, duration, intensity) {
