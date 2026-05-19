@@ -41,6 +41,16 @@
   document.body.style.setProperty('--hood-rgb',
     `${parseInt(_c.slice(0,2),16)},${parseInt(_c.slice(2,4),16)},${parseInt(_c.slice(4,6),16)}`);
 
+  const svgContent = SILHOUETTES[myNhId];
+  if (svgContent) {
+    const topbar = document.querySelector('.topbar');
+    topbar.style.overflow = 'hidden';
+    const sil = document.createElement('div');
+    sil.style.cssText = `position:absolute;right:-10px;top:-8px;opacity:0.09;color:${myNhColor};pointer-events:none;z-index:-1`;
+    sil.innerHTML = `<svg viewBox="0 0 200 80" fill="currentColor" width="200" height="80">${svgContent}</svg>`;
+    topbar.appendChild(sil);
+  }
+
   async function render() {
     const { data: rows } = await sb.from('weekly_km').select('*');
     const entries = rows || [];
