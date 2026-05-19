@@ -94,6 +94,40 @@
       <div class="alert" id="save-msg" style="margin-top:12px"></div>
     </div>
 
+    <div class="card" style="margin-top:12px">
+      <div class="card-title" style="display:flex;align-items:center;gap:6px">
+        <i class="ti ti-brand-strava" style="color:#FC4C02"></i>Strava
+      </div>
+      ${profile.strava_connected ? `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="width:40px;height:40px;border-radius:50%;background:#FC4C0218;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-brand-strava" style="color:#FC4C02;font-size:20px"></i>
+          </div>
+          <div>
+            <div style="font-weight:700">${profile.strava_athlete_name || 'Strava-användare'}</div>
+            <div style="font-size:13px;color:var(--text-muted)" id="strava-sync-info">Laddar…</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" id="strava-sync-btn" style="flex:1;padding:10px">
+            <i class="ti ti-refresh"></i> Synka nu
+          </button>
+          <button class="btn btn-outline" id="strava-disconnect-btn" style="flex:1;padding:10px;color:var(--text-muted)">
+            Koppla från
+          </button>
+        </div>
+        <div class="alert" id="strava-msg" style="margin-top:10px"></div>
+      ` : `
+        <div style="font-size:14px;color:var(--text-muted);margin-bottom:14px;line-height:1.5">
+          Koppla ditt Strava-konto för att synka löppass automatiskt.
+        </div>
+        <a href="${STRAVA_AUTH_URL}" class="btn btn-primary"
+           style="background:#FC4C02;border:none;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none">
+          <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
+        </a>
+      `}
+    </div>
+
     <button class="btn btn-outline btn-full" id="logout-btn2" style="margin-top:12px">
       <i class="ti ti-logout"></i> Logga ut
     </button>
@@ -128,6 +162,57 @@
     }
     btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Spara ändringar';
   });
+
+  // Strava section
+  if (profile.strava_connected) {
+    // Show last sync time
+    const { data: tokens } = await sb.from('strava_tokens').select('last_sync').eq('user_id', user.id).maybeSingle();
+    const syncInfoEl = document.getElementById('strava-sync-info');
+    if (syncInfoEl) {
+      if (tokens?.last_sync) {
+        const d = new Date(tokens.last_sync);
+        syncInfoEl.textContent = 'Synkad ' + d.toLocaleDateString('sv-SE', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      } else {
+        syncInfoEl.textContent = 'Aldrig synkad';
+      }
+    }
+
+    // Manual sync button
+    const syncBtn = document.getElementById('strava-sync-btn');
+    const stravaMsg = document.getElementById('strava-msg');
+    if (syncBtn) {
+      syncBtn.addEventListener('click', async () => {
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = '<i class="ti ti-loader-2"></i> Synkar…';
+        const { data: sd, error: se } = await sb.functions.invoke('strava-sync');
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = '<i class="ti ti-refresh"></i> Synka nu';
+        if (se || sd?.error) {
+          stravaMsg.textContent = sd?.error || se?.message;
+          stravaMsg.className = 'alert alert-error show';
+        } else if (sd?.skipped) {
+          stravaMsg.textContent = 'Redan synkad nyligen.';
+          stravaMsg.className = 'alert alert-success show';
+        } else {
+          stravaMsg.textContent = sd.synced > 0 ? `${sd.synced} nya löppass synkades!` : 'Inga nya löppass.';
+          stravaMsg.className = 'alert alert-success show';
+        }
+        setTimeout(() => { stravaMsg.className = 'alert'; }, 3000);
+      });
+    }
+
+    // Disconnect button
+    const disconnectBtn = document.getElementById('strava-disconnect-btn');
+    if (disconnectBtn) {
+      disconnectBtn.addEventListener('click', async () => {
+        if (!confirm('Koppla från Strava? Dina loggade löppass påverkas inte.')) return;
+        disconnectBtn.disabled = true;
+        await sb.from('strava_tokens').delete().eq('user_id', user.id);
+        await sb.from('profiles').update({ strava_connected: false, strava_athlete_name: null }).eq('id', user.id);
+        location.reload();
+      });
+    }
+  }
 
   // Logout
   async function doLogout() {

@@ -109,6 +109,15 @@ async function doLogin() {
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
   if (error) { showErr(error.message); btn.disabled = false; btn.textContent = 'Logga in'; return; }
   const profile = await getProfile(data.user.id);
+  // Kick off Strava sync in background using keepalive so it survives navigation
+  if (profile?.strava_connected) {
+    fetch(`${SUPABASE_URL}/functions/v1/strava-sync`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${data.session.access_token}`, 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: '{}',
+      keepalive: true,
+    }).catch(() => {});
+  }
   location.href = profile ? 'log.html' : 'onboarding.html';
 }
 document.getElementById('login-btn').addEventListener('click', doLogin);

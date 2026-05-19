@@ -66,6 +66,21 @@
         </button>
       </div>
     </div>
+
+    <!-- Step 3: Strava connect (optional) -->
+    <div id="step3" style="width:100%;display:none">
+      <h1 class="dark-headline" style="margin-bottom:8px">Koppla Strava</h1>
+      <p style="color:rgba(255,255,255,0.65);font-size:15px;margin-bottom:20px;line-height:1.5">
+        Synka dina löppass automatiskt så att dina km räknas för stadsdelen.
+      </p>
+      <div class="card">
+        <a id="strava-connect-btn" href="#" class="btn btn-primary"
+           style="background:#FC4C02;border:none;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;margin-bottom:12px">
+          <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
+        </a>
+        <a href="log.html" class="skip-link" style="display:block;text-align:center">Hoppa över — logga manuellt istället</a>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -124,7 +139,10 @@
       btn.disabled = false; btn.innerHTML = '<i class="ti ti-run"></i> Kom igång!';
       return;
     }
-    location.href = 'log.html';
+    // Profile saved — offer Strava connection
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step3').style.display = 'block';
+    document.getElementById('strava-connect-btn').href = STRAVA_AUTH_URL;
   });
 })();
 </script>

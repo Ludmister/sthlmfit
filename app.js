@@ -16,6 +16,14 @@ const NEIGHBOURHOODS = [
   { id: 10, name: 'Djurgården',        color: '#3B6D11' },
 ];
 
+const STRAVA_AUTH_URL =
+  'https://www.strava.com/oauth/authorize' +
+  '?client_id=247766' +
+  '&response_type=code' +
+  '&redirect_uri=' + encodeURIComponent('https://ludmister.github.io/sthlmfit/callback.html') +
+  '&approval_prompt=auto' +
+  '&scope=activity:read_all';
+
 async function requireAuth() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = 'login.html'; return null; }

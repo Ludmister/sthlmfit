@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SthlmFit – Kopplar Strava…</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px">
+  <div id="status" style="text-align:center">
+    <div class="spinner" style="margin:0 auto 16px"></div>
+    <div style="font-weight:700;font-size:17px;margin-bottom:6px">Kopplar Strava…</div>
+    <div style="font-size:14px;color:var(--text-muted)">Hämtar dina löppass</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const code   = params.get('code');
+  const err    = params.get('error');
+  const status = document.getElementById('status');
+
+  function showErr(msg) {
+    status.innerHTML = `
+      <div style="font-size:40px;margin-bottom:14px">⚠️</div>
+      <div style="font-weight:700;font-size:17px;margin-bottom:8px">Koppling avbröts</div>
+      <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px">${msg}</div>
+      <a href="profile.html" class="btn btn-outline" style="width:auto;padding:12px 24px;display:inline-flex;text-decoration:none">Tillbaka</a>
+    `;
+  }
+
+  if (err || !code) { showErr('Strava-koppling nekades eller avbröts.'); return; }
+
+  const user = await requireAuth();
+  if (!user) return;
+
+  const { data, error: fnErr } = await sb.functions.invoke('strava-exchange', { body: { code } });
+
+  if (fnErr || data?.error) {
+    showErr(data?.error || fnErr?.message || 'Okänt fel');
+    return;
+  }
+
+  const plural = data.synced === 1 ? 'löppass' : 'löppass';
+  status.innerHTML = `
+    <div style="width:64px;height:64px;border-radius:50%;background:#FC4C0220;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+      <i class="ti ti-brand-strava" style="font-size:32px;color:#FC4C02"></i>
+    </div>
+    <div style="font-weight:800;font-size:20px;margin-bottom:6px">Strava kopplat!</div>
+    <div style="font-size:14px;color:var(--text-muted)">
+      Hej ${data.athlete_name}! ${data.synced} ${plural} synkades.
+    </div>
+  `;
+
+  setTimeout(() => { location.href = 'dashboard.html'; }, 2000);
+})();
+</script>
+</body>
+</html>
