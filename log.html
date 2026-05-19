@@ -6,33 +6,27 @@
   <title>SthlmFit – Logga löpning</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body style="background:var(--bg)">
+<body style="background:var(--navy)">
 
 <div class="screen">
-  <!-- Dark header -->
   <div class="log-hero">
-    <div class="log-hero-title"><i class="ti ti-run" style="font-size:14px;margin-right:4px"></i>LOGGA DITT LÖPPASS</div>
+    <div class="log-hero-title"><i class="ti ti-run" style="font-size:12px;margin-right:4px"></i>LOGGA DITT LÖPPASS</div>
     <div class="log-hero-sub" id="log-sub">Hur långt sprang du idag?</div>
   </div>
 
-  <div style="padding:0 16px 24px;max-width:var(--max-w);margin:0 auto">
+  <div style="padding:16px;background:var(--bg);flex:1">
     <div class="card">
       <div class="alert alert-error" id="err"></div>
-
       <div class="km-input-wrap">
         <input type="number" class="km-input" id="km-input" value="5" min="0.1" max="50" step="0.1" inputmode="decimal" />
         <div class="km-unit">km</div>
       </div>
-
       <input type="range" class="km-slider" id="km-slider" min="0.5" max="50" step="0.5" value="5" />
-
       <div class="km-preview" id="preview">Ange hur många km du sprang</div>
-
-      <button class="btn btn-primary" id="log-btn" style="margin-top:8px">
+      <button class="btn btn-primary" id="log-btn" style="margin-top:4px">
         <i class="ti ti-check" style="font-size:18px"></i> Logga löpning
       </button>
     </div>
-
     <div class="skip-link">
       <a href="dashboard.html">Hoppa över idag</a>
     </div>
@@ -46,74 +40,40 @@
   const user    = await requireAuth();
   if (!user) return;
   const profile = await getProfile(user.id);
-  if (!profile)  { location.href = 'onboarding.html'; return; }
+  if (!profile) { location.href = 'onboarding.html'; return; }
 
   const nhName = profile.neighbourhoods?.name || 'din stadsdel';
-  const nhColor = profile.neighbourhoods?.color || '#1D9E75';
-
-  // Personalise header
   document.getElementById('log-sub').innerHTML =
     `Du springer för <strong style="color:#7ECFB3">${nhName}</strong>`;
 
   const kmInput  = document.getElementById('km-input');
   const kmSlider = document.getElementById('km-slider');
   const preview  = document.getElementById('preview');
-  const errEl    = document.getElementById('err');
 
   function updatePreview() {
     const km = parseFloat(kmInput.value) || 0;
-    if (km <= 0) {
-      preview.innerHTML = 'Ange hur många km du sprang';
-      preview.style.color = 'var(--text-muted)';
-    } else {
-      preview.innerHTML = `Det ger <strong>${nhName}</strong> +${km.toFixed(1).replace('.',',')} km denna vecka`;
-      preview.style.color = 'var(--text-sub)';
-    }
+    if (km <= 0) { preview.innerHTML = 'Ange hur många km du sprang'; return; }
+    preview.innerHTML = `Det ger <strong>${nhName}</strong> +${km.toFixed(1).replace('.',',')} km denna vecka`;
   }
-
-  kmInput.addEventListener('input', () => {
-    kmSlider.value = Math.min(50, Math.max(0.5, parseFloat(kmInput.value) || 0));
-    updatePreview();
-  });
-  kmSlider.addEventListener('input', () => {
-    kmInput.value = kmSlider.value;
-    updatePreview();
-  });
+  kmInput.addEventListener('input',  () => { kmSlider.value = Math.min(50, Math.max(0.5, parseFloat(kmInput.value)||0)); updatePreview(); });
+  kmSlider.addEventListener('input', () => { kmInput.value = kmSlider.value; updatePreview(); });
   updatePreview();
 
   document.getElementById('log-btn').addEventListener('click', async () => {
+    const errEl = document.getElementById('err');
     errEl.className = 'alert alert-error';
     const km = parseFloat(kmInput.value);
-
-    if (!km || km <= 0) {
-      errEl.textContent = 'Ange hur långt du sprang.';
-      errEl.className = 'alert alert-error show';
-      return;
-    }
-    if (km > 50) {
-      errEl.textContent = 'Det där verkar lite väl långt — max 50 km per dag!';
-      errEl.className = 'alert alert-error show';
-      return;
-    }
-
+    if (!km || km <= 0) { errEl.textContent = 'Ange hur långt du sprang.'; errEl.className = 'alert alert-error show'; return; }
+    if (km > 50)        { errEl.textContent = 'Det där verkar lite väl långt — max 50 km per dag!'; errEl.className = 'alert alert-error show'; return; }
     const btn = document.getElementById('log-btn');
-    btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Sparar…';
-
-    const { error } = await sb.from('workouts').insert({
-      user_id: user.id,
-      km: Math.round(km * 100) / 100,
-      logged_date: getTodayStr(),
-    });
-
+    btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin-icon"></i> Sparar…';
+    const { error } = await sb.from('workouts').insert({ user_id: user.id, km: Math.round(km*100)/100, logged_date: getTodayStr() });
     if (error) {
-      errEl.textContent = error.message;
-      errEl.className = 'alert alert-error show';
-      btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Logga löpning';
+      errEl.textContent = error.message; errEl.className = 'alert alert-error show';
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-check" style="font-size:18px"></i> Logga löpning';
       return;
     }
-
-    // Success animation
-    btn.innerHTML = '<i class="ti ti-check"></i> Loggat!';
+    btn.innerHTML = '<i class="ti ti-check" style="font-size:18px"></i> Loggat!';
     btn.style.background = 'var(--green-dark)';
     setTimeout(() => location.href = 'dashboard.html', 900);
   });
