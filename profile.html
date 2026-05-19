@@ -17,12 +17,9 @@
 
   <div id="content"><div class="spinner"></div></div>
 
-  <nav class="bottom-nav">
+  <nav class="bottom-nav" style="grid-template-columns:1fr 1fr">
     <button class="nav-tab" onclick="location.href='dashboard.html'">
-      <i class="ti ti-home"></i>Hem
-    </button>
-    <button class="nav-fab" onclick="location.href='dashboard.html?log=1'" aria-label="Logga löpning">
-      <i class="ti ti-plus"></i>
+      <i class="ti ti-map"></i>Karta
     </button>
     <button class="nav-tab active" onclick="location.href='profile.html'">
       <i class="ti ti-user"></i>Profil
@@ -122,9 +119,14 @@
             </button>
           </div>
         ` : `
-          <a href="${STRAVA_AUTH_URL}" class="btn btn-strava" style="text-decoration:none">
+          <a href="${STRAVA_AUTH_URL}" class="btn btn-strava" style="text-decoration:none;margin-bottom:10px">
             <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
           </a>
+          <div style="text-align:center;margin-top:10px">
+            <a href="log.html" style="font-size:13px;font-weight:600;color:var(--text-muted);text-decoration:none">
+              Eller logga km manuellt →
+            </a>
+          </div>
         `}
       </div>
 

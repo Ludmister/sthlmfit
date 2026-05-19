@@ -248,7 +248,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   flex: 1; padding: 10px 12px calc(var(--nav-h) + var(--fab-rise) + 16px);
   display: flex; flex-direction: column; gap: 10px;
 }
-.page-padded { padding: 12px 12px calc(var(--nav-h) + var(--fab-rise) + 16px); }
+.page-padded { padding: 12px 12px calc(var(--nav-h) + 16px); }
 
 /* ── Section header ──────────────────────────────────── */
 .section-head {
@@ -351,6 +351,58 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   padding: 10px 14px; margin-top: 12px;
   font-size: 13px; font-weight: 600; color: var(--text-sub);
   display: flex; align-items: center; gap: 6px;
+}
+
+/* ── Full-screen map UI (dashboard) ─────────────────── */
+.map-ui {
+  position: fixed;
+  top: 0; bottom: 0;
+  left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: var(--max-w);
+  pointer-events: none;
+  z-index: 100;
+}
+.map-btn {
+  pointer-events: all;
+  position: absolute;
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: rgba(13,27,42,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255,255,255,0.14);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  transition: transform 0.1s, background 0.15s;
+  font-family: var(--font);
+}
+.map-btn .ti { font-size: 20px; }
+.map-btn:active { transform: scale(0.93); background: rgba(13,27,42,1); }
+
+.map-bottom-card {
+  pointer-events: all;
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(13,27,42,0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 20px 20px 0 0;
+  border-top: 1.5px solid rgba(255,255,255,0.1);
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+}
+.map-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.map-stat-label {
+  font-size: 10px; font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase; letter-spacing: 0.6px; margin-top: 3px;
 }
 
 /* ── Bottom nav with FAB ─────────────────────────────── */

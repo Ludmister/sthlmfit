@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SthlmFit – Tavla</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="screen">
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <button onclick="location.href='dashboard.html'"
+        style="display:flex;align-items:center;gap:5px;color:rgba(255,255,255,0.7);font-size:14px;font-weight:600;background:none;border:none;cursor:pointer;font-family:var(--font);padding:0">
+        <i class="ti ti-arrow-left" style="font-size:18px"></i> Karta
+      </button>
+      <div class="topbar-wordmark">Sthlm<span>Fit</span></div>
+      <div style="width:64px"></div>
+    </div>
+  </div>
+
+  <div id="content"><div class="spinner"></div></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+(async () => {
+  const user = await requireAuth();
+  if (!user) return;
+
+  const profile = await getProfile(user.id);
+  if (!profile) { location.href = 'onboarding.html'; return; }
+
+  const myNhId = profile.neighbourhood_id;
+
+  async function render() {
+    const { data: rows } = await sb.from('weekly_km').select('*');
+    const entries = rows || [];
+    const leader  = entries[0];
+    const maxKm   = Math.max(leader?.total_km || 0.1, 0.1);
+    const allZero = entries.every(e => !e.total_km || e.total_km == 0);
+
+    let lbRows;
+    if (allZero) {
+      lbRows = `
+        <div class="empty-state">
+          <div class="empty-icon"><i class="ti ti-run"></i></div>
+          <div class="empty-title">Ingen har sprungit ännu</div>
+          <div class="empty-sub">Bli först för din stadsdel denna vecka!</div>
+        </div>`;
+    } else {
+      lbRows = entries.map((e, i) => {
+        const pct    = Math.round((e.total_km / maxKm) * 100);
+        const isMine = e.id === myNhId;
+        const behind = i > 0 ? Number(leader.total_km) - Number(e.total_km) : 0;
+        const rankEl = i === 0 ? `<span class="lb-rank r1"><i class="ti ti-medal"></i></span>`
+                     : i === 1 ? `<span class="lb-rank r2"><i class="ti ti-medal"></i></span>`
+                     : i === 2 ? `<span class="lb-rank r3"><i class="ti ti-medal"></i></span>`
+                     : `<span class="lb-rank" style="font-size:13px;font-weight:700;color:var(--text-muted)">${i+1}</span>`;
+        return `
+          <div class="lb-row${isMine?' mine':''}${i===0&&e.total_km>0?' leader':''}">
+            ${rankEl}
+            <div class="lb-dot" style="background:${e.color}"></div>
+            <div class="lb-name-wrap">
+              <div class="lb-name">${e.name}${isMine?'<span class="lb-du">DU</span>':''}</div>
+              <div class="lb-bar-track">
+                <div class="lb-bar-fill" style="width:${pct}%;background:${e.color}"></div>
+              </div>
+              ${i>0&&e.total_km>0?`<div class="lb-behind">${behind.toFixed(1).replace('.',',')} km bakom</div>`:''}
+            </div>
+            <div class="lb-km">${Number(e.total_km).toFixed(1).replace('.',',')} km</div>
+          </div>`;
+      }).join('');
+    }
+
+    document.getElementById('content').innerHTML = `
+      <div style="padding:14px 12px;display:flex;flex-direction:column;gap:10px">
+
+        <div class="section-head">Vem äger Stockholm?</div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="lb-table">${lbRows}</div>
+          <div class="countdown-row">
+            <div class="countdown-text">
+              <div class="live-dot"></div>
+              Återställs om <span class="countdown-val" id="cd">…</span>
+            </div>
+          </div>
+        </div>
+
+        ${!profile.strava_connected ? `
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text)">Logga löpning</div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:500;margin-top:2px">Manuell loggning</div>
+          </div>
+          <a href="log.html" class="btn btn-primary btn-sm" style="text-decoration:none;flex-shrink:0">
+            <i class="ti ti-plus"></i> Logga km
+          </a>
+        </div>` : ''}
+
+      </div>
+    `;
+
+    function tick() { const el = document.getElementById('cd'); if (el) el.textContent = getCountdown(); }
+    tick(); setInterval(tick, 1000);
+  }
+
+  await render();
+
+  sb.channel('lb-live')
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'workouts' }, render)
+    .subscribe();
+})();
+</script>
+</body>
+</html>

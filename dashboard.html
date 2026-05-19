@@ -2,52 +2,77 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>SthlmFit</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    #map { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; }
+    .leaflet-container { font-family: 'Inter', sans-serif !important; }
+    /* Dark-map popup style */
+    .leaflet-popup-content-wrapper {
+      background: rgba(13,27,42,0.95);
+      color: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(12px);
+    }
+    .leaflet-popup-tip { background: rgba(13,27,42,0.95); }
+    .leaflet-popup-close-button { color: rgba(255,255,255,0.5) !important; font-size: 18px !important; }
+    .map-popup-name  { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .map-popup-km    { font-size: 22px; font-weight: 900; color: var(--green); line-height: 1; }
+    .map-popup-rank  { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 3px; font-weight: 600; }
+    .map-popup-sub   { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+    /* Loading overlay */
+    #loading {
+      position: fixed; inset: 0; background: var(--navy);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; transition: opacity 0.4s;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+  </style>
 </head>
 <body>
-<div class="screen">
 
-  <div class="topbar">
-    <div class="topbar-inner">
-      <div class="topbar-wordmark">Sthlm<span>Fit</span></div>
-    </div>
+<div id="map"></div>
+
+<!-- Loading -->
+<div id="loading">
+  <div style="text-align:center">
+    <div class="wordmark" style="margin-bottom:24px">Sthlm<span>Fit</span></div>
+    <div class="spinner" style="margin:0 auto"></div>
   </div>
-
-  <div id="app"><div class="spinner"></div></div>
-
-  <nav class="bottom-nav">
-    <button class="nav-tab active" onclick="location.href='dashboard.html'">
-      <i class="ti ti-home"></i>Hem
-    </button>
-    <button class="nav-fab" id="fab-btn" aria-label="Logga löpning">
-      <i class="ti ti-plus"></i>
-    </button>
-    <button class="nav-tab" onclick="location.href='profile.html'">
-      <i class="ti ti-user"></i>Profil
-    </button>
-  </nav>
-
 </div>
 
-<!-- Bottom sheet -->
-<div class="sheet-overlay" id="sheet-overlay"></div>
-<div class="sheet" id="sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-title">Logga löpning</div>
-  <div class="sheet-sub" id="sheet-sub">Hur långt sprang du idag?</div>
-  <div class="alert alert-error" id="sheet-err"></div>
-  <div class="km-input-wrap">
-    <input type="number" class="km-input" id="km-input" value="5" min="0.1" max="50" step="0.1" inputmode="decimal" />
-    <div class="km-unit">km</div>
-  </div>
-  <input type="range" class="km-slider" id="km-slider" min="0.5" max="50" step="0.5" value="5" />
-  <div class="km-preview" id="km-preview">Ange hur många km du sprang</div>
-  <button class="btn btn-primary" id="log-btn">
-    <i class="ti ti-check" style="font-size:18px"></i> Logga löpning
+<!-- Floating UI layer -->
+<div class="map-ui">
+
+  <!-- Top-left: profile button -->
+  <button class="map-btn" onclick="location.href='profile.html'"
+    style="top:calc(16px + env(safe-area-inset-top)); left:16px">
+    <i class="ti ti-user"></i>
   </button>
+
+  <!-- Top-right: leaderboard button -->
+  <button class="map-btn" onclick="location.href='leaderboard.html'"
+    style="top:calc(16px + env(safe-area-inset-top)); right:16px">
+    <i class="ti ti-trophy"></i>
+  </button>
+
+  <!-- Bottom card -->
+  <div class="map-bottom-card" id="bottom-card" style="display:none">
+
+    <div class="map-stat-grid" id="stat-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <div id="card-footer" style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">
+      <!-- strava badge or log link -->
+    </div>
+
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -68,68 +93,16 @@ const GEO = { type:'FeatureCollection', features:[
 ]};
 
 function kmColor(km) {
-  if (!km || km <= 0) return '#E8E8E8';
+  if (!km || km <= 0) return '#2A3A4A';
   if (km <= 15)  return '#C0DD97';
   if (km <= 40)  return '#1D9E75';
   if (km <= 80)  return '#085041';
   return '#04342C';
 }
 
-// ── Sheet ──────────────────────────────────────────────
-let sheetNhName = 'din stadsdel';
-let sheetUserId = null;
-const sheetOverlay = document.getElementById('sheet-overlay');
-const sheetEl      = document.getElementById('sheet');
-
-function openSheet()  { sheetEl.classList.add('open'); sheetOverlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closeSheet() { sheetEl.classList.remove('open'); sheetOverlay.classList.remove('open'); document.body.style.overflow = ''; }
-sheetOverlay.addEventListener('click', closeSheet);
-document.getElementById('fab-btn').addEventListener('click', openSheet);
-
-const kmInput  = document.getElementById('km-input');
-const kmSlider = document.getElementById('km-slider');
-const kmPrev   = document.getElementById('km-preview');
-function updatePreview() {
-  const km = parseFloat(kmInput.value) || 0;
-  if (km <= 0) { kmPrev.innerHTML = 'Ange hur många km du sprang'; return; }
-  kmPrev.innerHTML = `Det ger <strong>${sheetNhName}</strong> +${km.toFixed(1).replace('.',',')} km`;
-}
-kmInput.addEventListener('input',  () => { kmSlider.value = Math.min(50, Math.max(0.5, parseFloat(kmInput.value)||0)); updatePreview(); });
-kmSlider.addEventListener('input', () => { kmInput.value = kmSlider.value; updatePreview(); });
-
-document.getElementById('log-btn').addEventListener('click', async () => {
-  const errEl = document.getElementById('sheet-err');
-  errEl.className = 'alert alert-error';
-  const km = parseFloat(kmInput.value);
-  if (!km || km <= 0) { errEl.textContent = 'Ange hur långt du sprang.'; errEl.className = 'alert alert-error show'; return; }
-  if (km > 50)        { errEl.textContent = 'Max 50 km per pass.';        errEl.className = 'alert alert-error show'; return; }
-  const btn = document.getElementById('log-btn');
-  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin-icon"></i> Sparar…';
-  const { error } = await sb.from('workouts').insert({ user_id: sheetUserId, km: Math.round(km*100)/100, logged_date: getTodayStr() });
-  if (error) {
-    errEl.textContent = error.message; errEl.className = 'alert alert-error show';
-    btn.disabled = false; btn.innerHTML = '<i class="ti ti-check" style="font-size:18px"></i> Logga löpning';
-    return;
-  }
-  btn.innerHTML = '<i class="ti ti-check" style="font-size:18px"></i> Loggat!';
-  btn.style.background = 'var(--green-dark)';
-  setTimeout(() => {
-    closeSheet();
-    btn.disabled = false; btn.style.background = '';
-    btn.innerHTML = '<i class="ti ti-check" style="font-size:18px"></i> Logga löpning';
-    render();
-  }, 800);
-});
-
-// ── Main ───────────────────────────────────────────────
-let cdInt = null;
-let mapInst = null;
-let mapPulseInt = null;
-
 (async () => {
   const user = await requireAuth();
   if (!user) return;
-  sheetUserId = user.id;
 
   const profile = await getProfile(user.id);
   if (!profile) { location.href = 'onboarding.html'; return; }
@@ -137,13 +110,8 @@ let mapPulseInt = null;
   const myNhId    = profile.neighbourhood_id;
   const myNhColor = profile.neighbourhoods?.color || '#1D9E75';
   const myNhName  = profile.neighbourhoods?.name  || '–';
-  sheetNhName = myNhName;
 
   if (profile.strava_connected) sb.functions.invoke('strava-sync').catch(() => {});
-
-  document.getElementById('sheet-sub').innerHTML =
-    `Du springer för <strong style="color:var(--green)">${myNhName}</strong>`;
-  updatePreview();
 
   const weekStart = (() => {
     const d = new Date(); const day = d.getDay();
@@ -151,11 +119,44 @@ let mapPulseInt = null;
     return d.toISOString().split('T')[0];
   })();
 
-  async function render() {
-    if (cdInt) { clearInterval(cdInt); cdInt = null; }
-    if (mapPulseInt) { clearInterval(mapPulseInt); mapPulseInt = null; }
-    if (mapInst) { mapInst.remove(); mapInst = null; }
+  // ── Map setup (once) ──────────────────────────────
+  const map = L.map('map', {
+    zoomControl: false, scrollWheelZoom: true, attributionControl: true,
+  }).setView([59.329, 18.068], 12);
 
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CartoDB', maxZoom: 16,
+  }).addTo(map);
+
+  // Build layers (once)
+  const layerMap = {};
+  GEO.features.forEach(f => {
+    const nhId  = f.properties.id;
+    const nb    = NEIGHBOURHOODS.find(n => n.id === nhId);
+    if (!nb) return;
+    const isMine = nhId === myNhId;
+    const layer = L.geoJSON(f, {
+      style: { fillColor:'#2A3A4A', fillOpacity:0.6, color: isMine ? myNhColor : 'rgba(255,255,255,0.2)', weight: isMine ? 2.5 : 0.8 }
+    }).addTo(map);
+
+    layer.bindPopup('', { maxWidth:190 });
+    layer.on('click', () => layer.openPopup());
+    layer.on('mouseover', () => !isMine && layer.setStyle({ fillOpacity:0.8 }));
+    layer.on('mouseout',  () => !isMine && layer.setStyle({ fillOpacity:0.6 }));
+
+    layerMap[nhId] = { layer, nb, isMine };
+  });
+
+  // Pulse own neighbourhood border
+  let pulse = true;
+  setInterval(() => {
+    pulse = !pulse;
+    const mine = layerMap[myNhId];
+    if (mine) mine.layer.setStyle({ color: pulse ? myNhColor : 'rgba(255,255,255,0.3)', weight: pulse ? 3 : 1.5 });
+  }, 900);
+
+  // ── Data + UI update ──────────────────────────────
+  async function updateData() {
     const [lbRes, myWoRes] = await Promise.all([
       sb.from('weekly_km').select('*'),
       sb.from('workouts').select('km').eq('user_id', user.id).gte('logged_date', weekStart),
@@ -165,234 +166,59 @@ let mapPulseInt = null;
     const myKm    = (myWoRes.data || []).reduce((s, w) => s + Number(w.km), 0);
     const myRow   = entries.find(e => e.id === myNhId);
     const myRank  = entries.findIndex(e => e.id === myNhId) + 1;
-    const leader  = entries[0];
-    const maxKm   = Math.max(leader?.total_km || 0.1, 0.1);
     const isLeading = myRank === 1 && (myRow?.total_km || 0) > 0;
 
-    let tagline = 'Logga ditt första pass och ta täten!';
-    if (isLeading && entries[1]) {
-      const gap = Number(myRow.total_km) - Number(entries[1].total_km);
-      tagline = `Du leder Stockholm med ${gap.toFixed(1).replace('.',',')} km`;
-    } else if (myRank > 1 && leader?.total_km > 0) {
-      const behind = Number(leader.total_km) - Number(myRow?.total_km || 0);
-      tagline = `${behind.toFixed(1).replace('.',',')} km bakom ${leader.name} — spring ikväll`;
-    }
+    // Update polygon fill colors
+    entries.forEach((e, i) => {
+      const ref = layerMap[e.id];
+      if (!ref) return;
+      ref.layer.setStyle({ fillColor: kmColor(e.total_km) });
+      ref.layer.setPopupContent(`
+        <div class="map-popup-name">${ref.nb.name}</div>
+        <div class="map-popup-km">${Number(e.total_km).toFixed(1).replace('.',',')} km</div>
+        <div class="map-popup-rank">#${i+1} denna vecka</div>
+        <div class="map-popup-sub">${e.active_runners} aktiva löpare</div>
+      `);
+    });
 
-    const allZero = entries.every(e => !e.total_km || e.total_km == 0);
-
-    let lbRows;
-    if (allZero) {
-      lbRows = `
-        <div class="empty-state">
-          <div class="empty-icon"><i class="ti ti-run"></i></div>
-          <div class="empty-title">Ingen har sprungit än denna vecka</div>
-          <div class="empty-sub">Bli först för din stadsdel!</div>
-          <button class="btn btn-primary" onclick="openSheet()" style="max-width:220px">
-            <i class="ti ti-plus"></i> Logga din första löpning
-          </button>
-        </div>`;
-    } else {
-      lbRows = entries.map((e, i) => {
-        const pct    = Math.round((e.total_km / maxKm) * 100);
-        const isMine = e.id === myNhId;
-        const behind = i > 0 ? Number(leader.total_km) - Number(e.total_km) : 0;
-        const rankEl = i === 0 ? `<span class="lb-rank r1"><i class="ti ti-medal"></i></span>`
-                     : i === 1 ? `<span class="lb-rank r2"><i class="ti ti-medal"></i></span>`
-                     : i === 2 ? `<span class="lb-rank r3"><i class="ti ti-medal"></i></span>`
-                     : `<span class="lb-rank" style="font-size:13px;font-weight:700;color:var(--text-muted)">${i+1}</span>`;
-        return `
-          <div class="lb-row${isMine?' mine':''}${i===0&&e.total_km>0?' leader':''}">
-            ${rankEl}
-            <div class="lb-dot" style="background:${e.color}"></div>
-            <div class="lb-name-wrap">
-              <div class="lb-name">${e.name}${isMine?'<span class="lb-du">DU</span>':''}</div>
-              <div class="lb-bar-track">
-                <div class="lb-bar-fill" style="width:${pct}%;background:${e.color}"></div>
-              </div>
-              ${i>0&&e.total_km>0?`<div class="lb-behind">${behind.toFixed(1).replace('.',',')} km bakom</div>`:''}
-            </div>
-            <div class="lb-km">${Number(e.total_km).toFixed(1).replace('.',',')} km</div>
-          </div>`;
-      }).join('');
-    }
-
-    // Strava section
-    let stravaHtml;
-    if (profile.strava_connected) {
-      const [tokRes, sWoRes] = await Promise.all([
-        sb.from('strava_tokens').select('last_sync').eq('user_id', user.id).maybeSingle(),
-        sb.from('workouts').select('km').eq('user_id', user.id).gte('logged_date', weekStart).not('strava_activity_id', 'is', null),
-      ]);
-      let lastSyncStr = 'Aldrig synkad';
-      if (tokRes.data?.last_sync) {
-        const d = new Date(tokRes.data.last_sync);
-        const isToday = d.toDateString() === new Date().toDateString();
-        lastSyncStr = 'Senast synkad: ' + (isToday
-          ? d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}) + ' idag'
-          : d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'}));
-      }
-      const sWo   = sWoRes.data || [];
-      const sKm   = sWo.reduce((s,w) => s+Number(w.km), 0);
-      const sCnt  = sWo.length;
-      stravaHtml = `
-        <div class="card">
-          <div class="strava-row">
-            <div class="strava-icon-circle">
-              <i class="ti ti-brand-strava" style="color:var(--strava);font-size:20px"></i>
-            </div>
-            <div class="strava-info">
-              <div class="strava-info-title">Strava kopplad</div>
-              <div class="strava-info-sub">${lastSyncStr}</div>
-            </div>
-            <button class="btn btn-sm btn-outline" id="dash-sync-btn">
-              <i class="ti ti-refresh"></i> Synka
-            </button>
-          </div>
-          ${sCnt > 0 ? `
-          <div class="strava-summary">
-            <i class="ti ti-run" style="color:var(--green)"></i>
-            Denna vecka: ${sCnt} löpning${sCnt>1?'ar':''}, ${sKm.toFixed(1).replace('.',',')} km via Strava
-          </div>` : ''}
-        </div>`;
-    } else {
-      stravaHtml = `
-        <div class="card">
-          <div class="strava-row" style="margin-bottom:14px">
-            <div class="strava-icon-circle">
-              <i class="ti ti-brand-strava" style="color:var(--strava);font-size:20px"></i>
-            </div>
-            <div class="strava-info">
-              <div class="strava-info-title">Koppla Strava</div>
-              <div class="strava-info-sub">Synka löppass automatiskt</div>
-            </div>
-          </div>
-          <a href="${STRAVA_AUTH_URL}" class="btn btn-strava" style="text-decoration:none">
-            <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
-          </a>
-        </div>`;
-    }
-
-    document.getElementById('app').innerHTML = `
-      <div class="hero anim-in">
-        ${profile.strava_connected ? `
-          <div class="hero-strava-badge">
-            <i class="ti ti-brand-strava" style="font-size:12px"></i>Strava kopplad
-          </div>` : ''}
-        <div class="hero-grid">
-          <div>
-            <div class="hero-nh-name">${myNhName}</div>
-            <div class="hero-nh-sub">Din stadsdel</div>
-          </div>
-          <div class="hero-rank">
-            <div class="hero-rank-num" style="color:${isLeading?'var(--gold)':'#fff'}">#${myRank||'–'}</div>
-            <div class="hero-rank-sub">Din rank</div>
-          </div>
-          <div class="hero-km">
-            <div class="hero-km-num">${myKm.toFixed(1).replace('.',',')} km</div>
-            <div class="hero-km-sub">km denna vecka</div>
-          </div>
-        </div>
-        <div class="hero-tagline">${tagline}</div>
+    // Update bottom card
+    document.getElementById('stat-grid').innerHTML = `
+      <div>
+        <div style="font-size:17px;font-weight:800;color:#fff;line-height:1.2">${myNhName}</div>
+        <div class="map-stat-label">Din stadsdel</div>
       </div>
-
-      ${!profile.strava_connected ? `
-      <div class="strava-banner">
-        <div class="strava-banner-text">Koppla Strava för automatisk synkning</div>
-        <a href="${STRAVA_AUTH_URL}" class="btn btn-sm btn-strava" style="text-decoration:none;flex-shrink:0">
-          <i class="ti ti-brand-strava"></i> Koppla
-        </a>
-      </div>` : ''}
-
-      <div class="page-content">
-
-        <div>
-          <div class="section-head">Vem äger Stockholm?</div>
-          <div class="card" style="padding:0;overflow:hidden">
-            <div class="lb-table">${lbRows}</div>
-            <div class="countdown-row">
-              <div class="countdown-text">
-                <div class="live-dot"></div>
-                Återställs om <span class="countdown-val" id="cd">…</span>
-              </div>
-              <button class="btn btn-sm btn-outline" onclick="openSheet()" style="padding:6px 12px">
-                <i class="ti ti-plus" style="font-size:13px"></i> Logga
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-head">Stockholm på kartan</div>
-          <div class="map-wrap"><div id="map"></div></div>
-        </div>
-
-        ${stravaHtml}
-
+      <div style="text-align:center">
+        <div style="font-size:44px;font-weight:900;line-height:1;letter-spacing:-3px;color:${isLeading?'var(--gold)':'#fff'}">#${myRank||'–'}</div>
+        <div class="map-stat-label">Din rank</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:22px;font-weight:800;color:var(--green);line-height:1.1">${myKm.toFixed(1).replace('.',',')} km</div>
+        <div class="map-stat-label">Denna vecka</div>
       </div>
     `;
 
-    // Countdown
-    function tick() { const el = document.getElementById('cd'); if (el) el.textContent = getCountdown(); }
-    tick(); cdInt = setInterval(tick, 1000);
+    document.getElementById('card-footer').innerHTML = profile.strava_connected
+      ? `<div style="display:flex;align-items:center;gap:7px">
+           <i class="ti ti-brand-strava" style="color:var(--strava);font-size:16px"></i>
+           <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.55)">Strava kopplad</span>
+         </div>`
+      : `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+           <span style="font-size:12px;color:rgba(255,255,255,0.45);font-weight:500">Ingen Strava-koppling</span>
+           <a href="log.html" style="font-size:13px;font-weight:700;color:var(--green);text-decoration:none">
+             Logga km manuellt →
+           </a>
+         </div>`;
 
-    // Map
-    const kmMap = Object.fromEntries(entries.map((e,i) => [e.id, { km: e.total_km, runners: e.active_runners, rank: i+1 }]));
-    mapInst = L.map('map', { zoomControl:false, scrollWheelZoom:false, attributionControl:true }).setView([59.329,18.068],11);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution:'&copy; OpenStreetMap &copy; CartoDB', maxZoom:16,
-    }).addTo(mapInst);
-
-    let myLayer = null;
-    GEO.features.forEach(f => {
-      const nhId = f.properties.id;
-      const nb   = NEIGHBOURHOODS.find(n => n.id === nhId);
-      if (!nb) return;
-      const d = kmMap[nhId] || { km:0, runners:0, rank:'-' };
-      const isMine = nhId === myNhId;
-      const layer = L.geoJSON(f, {
-        style: { fillColor:kmColor(d.km), fillOpacity:0.6, color:isMine?myNhColor:'rgba(255,255,255,0.25)', weight:isMine?2.5:0.8 }
-      }).addTo(mapInst);
-      layer.bindPopup(`
-        <div class="map-popup-name">${nb.name}</div>
-        <div class="map-popup-km">${Number(d.km).toFixed(1).replace('.',',')} km</div>
-        <div class="map-popup-rank">#${d.rank} denna vecka</div>
-        <div class="map-popup-sub">${d.runners} aktiva löpare</div>
-      `, { maxWidth:180 });
-      layer.on('mouseover', () => layer.setStyle({ fillOpacity:0.8 }));
-      layer.on('mouseout',  () => layer.setStyle({ fillOpacity:0.6 }));
-      if (isMine) myLayer = layer;
-    });
-
-    if (myLayer) {
-      let pulse = true;
-      mapPulseInt = setInterval(() => {
-        pulse = !pulse;
-        myLayer.setStyle({ color: pulse ? myNhColor : 'rgba(255,255,255,0.4)', weight: pulse ? 3 : 1.5 });
-      }, 900);
-    }
-
-    // Strava sync button
-    const syncBtn = document.getElementById('dash-sync-btn');
-    if (syncBtn) {
-      syncBtn.addEventListener('click', async () => {
-        syncBtn.disabled = true;
-        syncBtn.innerHTML = '<i class="ti ti-loader-2 spin-icon"></i>';
-        const { data:sd } = await sb.functions.invoke('strava-sync');
-        syncBtn.disabled = false;
-        syncBtn.innerHTML = '<i class="ti ti-check"></i> Synkat!';
-        if (sd?.synced > 0) render();
-        else setTimeout(() => { syncBtn.innerHTML = '<i class="ti ti-refresh"></i> Synka'; }, 2000);
-      });
-    }
+    document.getElementById('bottom-card').style.display = 'block';
+    document.getElementById('loading').classList.add('hidden');
   }
 
-  await render();
+  await updateData();
 
+  // Realtime
   sb.channel('dashboard-live')
-    .on('postgres_changes', { event:'INSERT', schema:'public', table:'workouts' }, () => render())
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'workouts' }, () => updateData())
     .subscribe();
-
-  if (new URLSearchParams(location.search).get('log') === '1') openSheet();
 })();
 </script>
 </body>
