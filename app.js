@@ -72,6 +72,38 @@ async function requireAuth() {
   return session.user;
 }
 
+function activityLabel(key) {
+  return { run: 'Löpning', gym: 'Gym', walk: 'Promenad', cycle: 'Cykel', swim: 'Simning' }[key] || key;
+}
+function activityIcon(key) {
+  return { run: 'ti-run', gym: 'ti-barbell', walk: 'ti-walk', cycle: 'ti-bike', swim: 'ti-swim' }[key] || 'ti-bolt';
+}
+function activityKm(activity, duration) {
+  const speed = { run: 10, walk: 5, cycle: 20, swim: 2 };
+  const km = (speed[activity] || 0) * duration / 60;
+  return km > 0 ? `${km.toFixed(1).replace('.',',')} km` : null;
+}
+function timeAgo(dateStr) {
+  const s = (Date.now() - new Date(dateStr).getTime()) / 1000;
+  if (s < 60)    return 'just nu';
+  if (s < 3600)  return `${Math.floor(s/60)} min sedan`;
+  if (s < 86400) return `${Math.floor(s/3600)} h sedan`;
+  return `${Math.floor(s/86400)} d sedan`;
+}
+function getCountdownToMonday() {
+  const now = new Date();
+  const monday = new Date(now);
+  const day = monday.getDay();
+  const daysUntil = day === 1 ? 7 : (8 - day) % 7;
+  monday.setDate(monday.getDate() + daysUntil);
+  monday.setHours(0, 0, 0, 0);
+  const diff = monday - now;
+  const totalH = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  if (totalH >= 24) return `${Math.floor(totalH/24)}d ${totalH%24}h`;
+  return `${totalH}h ${m}min`;
+}
+
 async function getProfile(userId) {
   const { data, error } = await sb
     .from('profiles')

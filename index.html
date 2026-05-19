@@ -9,7 +9,7 @@
 <body>
 <div class="screen">
 
-  <div class="topbar">
+  <div class="topbar topbar-dark">
     <div class="topbar-inner">
       <div class="topbar-logo">Sthlm<span>Fit</span></div>
       <span class="nh-badge" id="nh-badge">…</span>
@@ -30,6 +30,9 @@
     <button class="nav-tab" onclick="location.href='leaderboard.html'">
       <i class="ti ti-trophy"></i>Tävling
     </button>
+    <button class="nav-tab" onclick="location.href='friends.html'">
+      <i class="ti ti-users"></i>Vänner
+    </button>
     <button class="nav-tab" onclick="location.href='profile.html'">
       <i class="ti ti-user"></i>Profil
     </button>
@@ -41,16 +44,14 @@
 <script src="app.js"></script>
 <script>
 function countUp(el, target, duration) {
-  if (!el || target === 0) return;
-  duration = duration || 700;
-  const steps = 24;
-  const stepVal = Math.ceil(target / steps);
-  let current = 0;
-  const interval = duration / steps;
-  const timer = setInterval(() => {
-    current = Math.min(current + stepVal, target);
-    el.textContent = current;
-    if (current >= target) clearInterval(timer);
+  if (!el) return;
+  if (target === 0) { el.textContent = '0'; return; }
+  const steps = 24, stepVal = Math.ceil(target / steps), interval = (duration || 700) / steps;
+  let cur = 0;
+  const t = setInterval(() => {
+    cur = Math.min(cur + stepVal, target);
+    el.textContent = cur.toLocaleString('sv-SE');
+    if (cur >= target) clearInterval(t);
   }, interval);
 }
 
@@ -67,90 +68,91 @@ function countUp(el, target, duration) {
     return;
   }
 
-  // ── Goal card ──────────────────────────────────────────────────────────
+  async function buildHero() {
+    const { data: lb } = await sb.from('neighbourhood_leaderboard').select('*');
+    const sorted = (lb || []).sort((a, b) => (b.weekly_points || 0) - (a.weekly_points || 0));
+    const myNhId = profile.neighbourhood_id;
+    const myIdx  = sorted.findIndex(e => e.id === myNhId);
+    const myRank = myIdx + 1;
+    const myPts  = sorted[myIdx]?.weekly_points || 0;
+    const nhName = profile.neighbourhoods?.name || 'Din stadsdel';
+
+    let headline, subline, numClass = '';
+    if (!myNhId || myIdx === -1) {
+      headline = 'Välj en stadsdel'; subline = 'Gå till Profil för att välja stadsdel';
+    } else if (myRank === 1) {
+      headline = `${nhName} leder!`;
+      const gap = myPts - (sorted[1]?.weekly_points || 0);
+      subline  = `${gap > 0 ? gap.toLocaleString('sv-SE') + ' pts före ' + (sorted[1]?.name || '') : 'Inga utmanare än'}`;
+      numClass = 'gold';
+    } else {
+      const above = sorted[myRank - 2];
+      const gap   = (above?.weekly_points || 0) - myPts;
+      headline = `Du ligger på plats #${myRank}`;
+      subline  = `${gap.toLocaleString('sv-SE')} pts bakom ${above?.name || ''}`;
+    }
+
+    return `
+      <div class="competition-hero">
+        <div class="comp-hero-eyebrow">DENNA VECKA · ${nhName.toUpperCase()}</div>
+        <div class="comp-hero-number ${numClass}">#${myRank || '–'}</div>
+        <div class="comp-hero-headline">${headline}</div>
+        <div class="comp-hero-sub">${subline}</div>
+        <div class="comp-hero-bg">#${myRank || '–'}</div>
+      </div>`;
+  }
+
   async function buildGoalCard() {
-    const type   = profile.goal_type;
-    const target = profile.goal_value;
+    const type = profile.goal_type, target = profile.goal_value;
     let pct = 0, label = '', detail = '', meta = '', isOver = false;
 
     if (type === 'lose_weight') {
-      const { data: meals } = await sb.from('meals')
-        .select('calories').eq('user_id', user.id).eq('logged_date', getTodayStr());
+      const { data: meals } = await sb.from('meals').select('calories').eq('user_id', user.id).eq('logged_date', getTodayStr());
       const total = (meals || []).reduce((s, m) => s + m.calories, 0);
-      pct = Math.min(100, Math.round(total / target * 100));
-      isOver = total > target;
-      label  = 'Viktminskning';
-      detail = `${total.toLocaleString('sv-SE')} av ${target.toLocaleString('sv-SE')} kcal idag`;
-      meta   = isOver ? `${(total-target).toLocaleString('sv-SE')} kcal över` : `${(target-total).toLocaleString('sv-SE')} kcal kvar`;
-
+      pct = Math.min(100, Math.round(total / target * 100)); isOver = total > target;
+      label = 'Viktminskning';
+      detail = `${total.toLocaleString('sv-SE')} av ${(target||2000).toLocaleString('sv-SE')} kcal idag`;
+      meta = isOver ? `${(total-target).toLocaleString('sv-SE')} kcal över` : `${(target-total).toLocaleString('sv-SE')} kcal kvar`;
     } else if (type === 'run_more') {
-      const ws = formatDate(getWeekStart());
-      const { data: wk } = await sb.from('workouts')
-        .select('duration').eq('user_id', user.id).eq('activity', 'run').gte('created_at', ws);
+      const { data: wk } = await sb.from('workouts').select('duration').eq('user_id', user.id).eq('activity', 'run').gte('created_at', formatDate(getWeekStart()));
       const mins = (wk || []).reduce((s, w) => s + w.duration, 0);
-      pct    = Math.min(100, Math.round(mins / target * 100));
-      label  = 'Spring mer';
-      detail = `${mins} av ${target} min löpning denna vecka`;
-      meta   = pct >= 100 ? 'Veckomål uppnått!' : `${target - mins} min kvar`;
-
+      pct = Math.min(100, Math.round(mins / target * 100)); label = 'Spring mer';
+      detail = `${mins} av ${target} min löpning`; meta = pct >= 100 ? 'Veckomål uppnått!' : `${target - mins} min kvar`;
     } else if (type === 'train_more') {
-      const ws = formatDate(getWeekStart());
-      const { data: wk } = await sb.from('workouts')
-        .select('id').eq('user_id', user.id).gte('created_at', ws);
+      const { data: wk } = await sb.from('workouts').select('id').eq('user_id', user.id).gte('created_at', formatDate(getWeekStart()));
       const count = (wk || []).length;
-      pct    = Math.min(100, Math.round(count / target * 100));
-      label  = 'Träna mer';
-      detail = `${count} av ${target} pass denna vecka`;
-      meta   = pct >= 100 ? 'Veckomål uppnått!' : `${target - count} pass kvar`;
-
+      pct = Math.min(100, Math.round(count / target * 100)); label = 'Träna mer';
+      detail = `${count} av ${target} pass denna vecka`; meta = pct >= 100 ? 'Veckomål uppnått!' : `${target - count} pass kvar`;
     } else if (type === 'gain_muscle') {
-      const ws = formatDate(getWeekStart());
-      const { data: wk } = await sb.from('workouts')
-        .select('id').eq('user_id', user.id).eq('activity', 'gym').gte('created_at', ws);
+      const { data: wk } = await sb.from('workouts').select('id').eq('user_id', user.id).eq('activity', 'gym').gte('created_at', formatDate(getWeekStart()));
       const count = (wk || []).length;
-      pct    = Math.min(100, Math.round(count / target * 100));
-      label  = 'Bygg muskler';
-      detail = `${count} av ${target} gympass denna vecka`;
-      meta   = pct >= 100 ? 'Veckomål uppnått!' : `${target - count} gympass kvar`;
+      pct = Math.min(100, Math.round(count / target * 100)); label = 'Bygg muskler';
+      detail = `${count} av ${target} gympass denna vecka`; meta = pct >= 100 ? 'Veckomål uppnått!' : `${target - count} gympass kvar`;
     }
 
     const calLink = type === 'lose_weight'
-      ? '<a href="calories.html" style="color:var(--green);font-weight:700">Spåra kalorier →</a>'
-      : '';
+      ? '<a href="calories.html" style="color:var(--green);font-weight:700">Spåra kalorier →</a>' : '';
 
-    return { pct, html: `
-      <div class="goal-card" data-pct="${pct}">
+    return { pct, isOver, html: `
+      <div class="goal-card">
         <div class="goal-name">${label}</div>
-        <div class="goal-pct" id="goal-pct-num">${pct}<span style="font-size:22px;font-weight:600;-webkit-text-fill-color:var(--text-muted);background:none">%</span></div>
+        <div class="goal-pct">${pct}<span style="font-size:22px;font-weight:600;-webkit-text-fill-color:var(--text-muted);background:none">%</span></div>
         <div class="goal-detail">${detail}</div>
-        <div class="progress-track">
-          <div class="progress-fill${isOver ? ' over' : ''}" id="goal-fill" style="width:0%"></div>
-        </div>
+        <div class="progress-track"><div class="progress-fill${isOver?' over':''}" id="goal-fill" style="width:0%"></div></div>
         <div class="goal-meta"><span>${meta}</span>${calLink}</div>
       </div>` };
   }
 
-  // ── Streak card ────────────────────────────────────────────────────────
   async function buildStreakCard() {
-    const { data: workouts } = await sb.from('workouts')
-      .select('created_at').eq('user_id', user.id).order('created_at', { ascending: false });
-
-    const trained  = new Set((workouts || []).map(w => w.created_at.split('T')[0]));
-    const todayISO = getTodayStr();
-    const today    = new Date();
-    const labels   = ['M','T','O','T','F','L','S'];
-
+    const { data: workouts } = await sb.from('workouts').select('created_at').eq('user_id', user.id).order('created_at', { ascending: false });
+    const trained = new Set((workouts || []).map(w => w.created_at.split('T')[0]));
+    const todayISO = getTodayStr(), today = new Date();
+    const labels = ['M','T','O','T','F','L','S'];
     const dots = getWeekDays().map((d, i) => {
-      const iso      = formatDate(d);
-      const isToday  = iso === todayISO;
-      const isFuture = d > today;
-      const done     = !isFuture && trained.has(iso);
-      let cls = 'streak-dot';
-      if (done)    cls += ' done';
-      if (isToday) cls += ' today';
+      const iso = formatDate(d), isToday = iso === todayISO, isFuture = d > today, done = !isFuture && trained.has(iso);
       return `<div class="streak-cell">
         <span class="streak-day-label">${labels[i]}</span>
-        <div class="${cls}">${done ? '<i class="ti ti-check"></i>' : ''}</div>
+        <div class="streak-dot${done?' done':''}${isToday?' today':''}">${done?'<i class="ti ti-check"></i>':''}</div>
       </div>`;
     }).join('');
 
@@ -159,8 +161,10 @@ function countUp(el, target, duration) {
     if (!trained.has(todayISO)) check.setDate(check.getDate() - 1);
     while (trained.has(formatDate(check))) { streak++; check.setDate(check.getDate() - 1); }
 
+    const glowing = streak > 3;
+    const flameStyle = glowing ? 'font-size:32px;color:var(--green);filter:drop-shadow(0 0 10px rgba(29,158,117,0.8))' : 'font-size:32px;color:var(--green)';
     const flameIcon = streak > 0
-      ? '<i class="ti ti-flame" style="font-size:32px;color:var(--green)"></i>'
+      ? `<i class="ti ti-flame" style="${flameStyle}"></i>`
       : '<i class="ti ti-moon" style="font-size:32px;color:var(--text-muted)"></i>';
 
     return `
@@ -168,7 +172,7 @@ function countUp(el, target, duration) {
         <div class="streak-header">
           <div>
             <div class="card-label">STREAK</div>
-            <div class="streak-num${streak > 0 ? ' active' : ''}" id="streak-count">${streak}</div>
+            <div class="streak-num${streak>0?' active':''}" id="streak-count">${streak}</div>
             <div class="streak-label">dagar i rad</div>
           </div>
           <div class="streak-flame">${flameIcon}</div>
@@ -177,16 +181,58 @@ function countUp(el, target, duration) {
       </div>`;
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────
-  async function render() {
-    const [{ pct, html: goalHtml }, streakHtml] = await Promise.all([
-      buildGoalCard(),
-      buildStreakCard(),
-    ]);
+  async function buildFeed() {
+    const { data: feed } = await sb.rpc('get_neighbourhood_activity', { limit_n: 8 });
+    if (!feed?.length) return '';
+    const items = feed.map(f => {
+      const km    = activityKm(f.activity, f.duration);
+      const label = activityLabel(f.activity);
+      const icon  = activityIcon(f.activity);
+      const desc  = km ? `${label.toLowerCase()} ${km}` : `${f.duration} min ${label.toLowerCase()}`;
+      return `
+        <div class="feed-item">
+          <div class="feed-icon"><i class="ti ${icon}"></i></div>
+          <div class="feed-text">Någon i <strong>${f.neighbourhood_name}</strong> ${desc}</div>
+          <div class="feed-time">${timeAgo(f.created_at)}</div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="card-title" style="margin:0">Stockholm just nu</div>
+          <div class="live-badge"><div class="live-dot"></div>&nbsp;Live</div>
+        </div>
+        <div class="feed-wrap">${items}</div>
+        <button class="btn btn-outline btn-sm btn-full" style="margin-top:14px" onclick="location.href='leaderboard.html'">
+          <i class="ti ti-trophy"></i> Se hela tävlingen
+        </button>
+      </div>`;
+  }
 
-    const { data: weekData } = await sb.from('workouts')
-      .select('points').eq('user_id', user.id)
-      .gte('created_at', formatDate(getWeekStart()));
+  async function buildWeeklySummary() {
+    if (new Date().getDay() !== 0) return '';
+    const { data: wk } = await sb.from('workouts').select('points, activity').eq('user_id', user.id).gte('created_at', formatDate(getWeekStart()));
+    const pts = (wk || []).reduce((s, w) => s + (w.points || 0), 0);
+    const sessions = (wk || []).length;
+    if (!sessions) return '';
+    return `
+      <div class="weekly-summary">
+        <div class="ws-title">Veckans sammanfattning</div>
+        <div class="ws-headline">Bra jobbat denna vecka!</div>
+        <div class="ws-stats">
+          <div class="ws-stat"><div class="ws-stat-val">${pts}</div><div class="ws-stat-label">Poäng</div></div>
+          <div class="ws-stat"><div class="ws-stat-val">${sessions}</div><div class="ws-stat-label">Pass</div></div>
+        </div>
+      </div>`;
+  }
+
+  async function render() {
+    const [heroHtml, goalResult, streakHtml, feedHtml, summaryHtml] = await Promise.all([
+      buildHero(), buildGoalCard(), buildStreakCard(), buildFeed(), buildWeeklySummary()
+    ]);
+    const { pct, isOver, html: goalHtml } = goalResult;
+
+    const { data: weekData } = await sb.from('workouts').select('points').eq('user_id', user.id).gte('created_at', formatDate(getWeekStart()));
     const weekPts = (weekData || []).reduce((s, w) => s + (w.points || 0), 0);
     const name = profile.username || user.email.split('@')[0];
 
@@ -201,14 +247,14 @@ function countUp(el, target, duration) {
           <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.6px;text-transform:uppercase;margin-top:2px">Poäng denna vecka</div>
         </div>
       </div>
+      ${summaryHtml}
+      ${heroHtml}
       ${goalHtml}
       ${streakHtml}
+      ${feedHtml}
     `;
 
-    // Count-up animations
     countUp(document.getElementById('week-pts'), weekPts);
-
-    // Animate progress bar
     requestAnimationFrame(() => setTimeout(() => {
       const fill = document.getElementById('goal-fill');
       if (fill) fill.style.width = pct + '%';
@@ -218,8 +264,7 @@ function countUp(el, target, duration) {
   await render();
 
   sb.channel('index-updates')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'workouts',
-        filter: `user_id=eq.${user.id}` }, render)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'workouts', filter: `user_id=eq.${user.id}` }, render)
     .subscribe();
 })();
 </script>

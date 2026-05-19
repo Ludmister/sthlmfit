@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SthlmFit – Vänner</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="screen">
+
+  <div class="topbar topbar-dark">
+    <div class="topbar-inner">
+      <div class="topbar-logo">Sthlm<span>Fit</span></div>
+      <span class="nh-badge" id="nh-badge">…</span>
+    </div>
+  </div>
+
+  <div class="page-content" id="content">
+    <div class="spinner"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab" onclick="location.href='index.html'">
+      <i class="ti ti-home"></i>Dashboard
+    </button>
+    <a class="nav-tab-log" href="log.html">
+      <span class="icon"><i class="ti ti-plus"></i></span>Logga
+    </a>
+    <button class="nav-tab" onclick="location.href='leaderboard.html'">
+      <i class="ti ti-trophy"></i>Tävling
+    </button>
+    <button class="nav-tab active" onclick="location.href='friends.html'">
+      <i class="ti ti-users"></i>Vänner
+    </button>
+    <button class="nav-tab" onclick="location.href='profile.html'">
+      <i class="ti ti-user"></i>Profil
+    </button>
+  </nav>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+(async () => {
+  const user = await requireAuth();
+  if (!user) return;
+
+  const profile = await getProfile(user.id).catch(() => null);
+  document.getElementById('nh-badge').textContent = profile?.neighbourhoods?.name ?? '–';
+
+  async function loadFriendships() {
+    const [sent, received] = await Promise.all([
+      sb.from('friendships').select('id, friend_id, status, created_at').eq('user_id', user.id),
+      sb.from('friendships').select('id, user_id, status, created_at').eq('friend_id', user.id),
+    ]);
+    return { sent: sent.data || [], received: received.data || [] };
+  }
+
+  async function getProfilesForIds(ids) {
+    if (!ids.length) return [];
+    const { data } = await sb.from('profiles')
+      .select('id, username, neighbourhood_id, goal_type, neighbourhoods(name, color)')
+      .in('id', ids);
+    return data || [];
+  }
+
+  async function render() {
+    const { sent, received } = await loadFriendships();
+
+    const acceptedFriendIds = [
+      ...sent.filter(f => f.status === 'accepted').map(f => f.friend_id),
+      ...received.filter(f => f.status === 'accepted').map(f => f.user_id),
+    ];
+    const pendingReceived = received.filter(f => f.status === 'pending');
+
+    const [friendProfiles, weeklyPts] = await Promise.all([
+      getProfilesForIds(acceptedFriendIds),
+      acceptedFriendIds.length
+        ? sb.rpc('get_friends_weekly_points', { friend_ids: acceptedFriendIds })
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const pts = (weeklyPts.data || []);
+    const ptsMap = Object.fromEntries(pts.map(p => [p.user_id, p.weekly_points]));
+
+    const sortedFriends = friendProfiles.sort((a, b) => (ptsMap[b.id]||0) - (ptsMap[a.id]||0));
+
+    const pendingProfiles = await getProfilesForIds(pendingReceived.map(r => r.user_id));
+
+    function friendCard(p, rank) {
+      const w    = ptsMap[p.id] || 0;
+      const init = (p.username || '?')[0].toUpperCase();
+      const nhName = p.neighbourhoods?.name || '–';
+      const nhColor = p.neighbourhoods?.color || '#1D9E75';
+      return `
+        <div class="friend-card" style="gap:12px">
+          <div style="font-size:13px;font-weight:800;color:var(--text-muted);width:18px;text-align:center;flex-shrink:0">${rank}</div>
+          <div class="friend-avatar" style="background:${nhColor}18;border-color:${nhColor}40;color:${nhColor}">${init}</div>
+          <div class="friend-info">
+            <div class="friend-name">${p.username || '(ej satt)'}</div>
+            <div class="friend-meta"><i class="ti ti-map-pin" style="font-size:11px"></i> ${nhName}</div>
+          </div>
+          <div>
+            <div class="friend-pts">${w.toLocaleString('sv-SE')}</div>
+            <div class="friend-rank" style="margin-top:2px">pts</div>
+            <button class="btn-challenge" style="margin-top:6px" onclick="sendChallenge('${p.id}','${(p.username||'Din vän').replace(/'/g,"\\'")}')">
+              <i class="ti ti-sword"></i> Utmana
+            </button>
+          </div>
+        </div>`;
+    }
+
+    function requestCard(fr, p) {
+      const init = (p?.username || '?')[0].toUpperCase();
+      return `
+        <div class="request-card">
+          <div class="friend-avatar" style="background:var(--gold-light);border-color:#FDE68A;color:#D97706">${init}</div>
+          <div class="friend-info">
+            <div class="friend-name">${p?.username || '(okänd)'}</div>
+            <div class="friend-meta">Vill bli din vän</div>
+          </div>
+          <div class="request-btns">
+            <button class="btn btn-primary btn-sm" onclick="acceptFriend('${fr.id}')">
+              <i class="ti ti-check"></i>
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="declineFriend('${fr.id}')">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+        </div>`;
+    }
+
+    document.getElementById('content').innerHTML = `
+      <div style="font-size:20px;font-weight:900;color:var(--text)">Vänner</div>
+
+      <div class="card">
+        <div class="card-title">Lägg till vän</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" class="input" id="search-input" placeholder="Sök användarnamn…" style="flex:1" autocomplete="off" />
+          <button class="btn btn-primary btn-sm" id="search-btn" style="flex-shrink:0">
+            <i class="ti ti-search"></i>
+          </button>
+        </div>
+        <div id="search-results" style="margin-top:8px"></div>
+      </div>
+
+      ${pendingReceived.length ? `
+      <div>
+        <div class="card-label" style="margin-bottom:8px">FÖRFRÅGNINGAR (${pendingReceived.length})</div>
+        ${pendingReceived.map(fr => {
+          const p = pendingProfiles.find(x => x.id === fr.user_id);
+          return requestCard(fr, p);
+        }).join('')}
+      </div>` : ''}
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="card-label">VÄNNER (${sortedFriends.length})</div>
+          <div style="font-size:11px;color:var(--text-muted)">Rankad efter veckopoäng</div>
+        </div>
+        ${sortedFriends.length
+          ? sortedFriends.map((p, i) => friendCard(p, i + 1)).join('')
+          : '<div class="card"><div class="empty"><i class="ti ti-users" style="font-size:28px;display:block;margin-bottom:8px;color:var(--border)"></i>Inga vänner än. Sök efter dina träningspolare!</div></div>'
+        }
+      </div>
+    `;
+
+    // Search
+    const searchInput = document.getElementById('search-input');
+    const searchBtn   = document.getElementById('search-btn');
+    const resultsEl   = document.getElementById('search-results');
+
+    async function doSearch() {
+      const q = searchInput.value.trim();
+      if (!q) return;
+      resultsEl.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:8px 0">Söker…</div>';
+      const { data: found } = await sb.from('profiles')
+        .select('id, username, neighbourhood_id, neighbourhoods(name, color)')
+        .ilike('username', `%${q}%`)
+        .neq('id', user.id)
+        .limit(5);
+
+      if (!found?.length) {
+        resultsEl.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:8px 0">Inga användare hittades.</div>';
+        return;
+      }
+
+      const existingIds = new Set([...sent.map(f => f.friend_id), ...received.map(f => f.user_id), ...acceptedFriendIds]);
+      resultsEl.innerHTML = found.map(p => {
+        const already = existingIds.has(p.id);
+        const init    = (p.username || '?')[0].toUpperCase();
+        const nhColor = p.neighbourhoods?.color || '#1D9E75';
+        return `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+            <div class="friend-avatar" style="width:36px;height:36px;font-size:14px;background:${nhColor}18;border-color:${nhColor}40;color:${nhColor}">${init}</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700">${p.username}</div>
+              <div style="font-size:11px;color:var(--text-muted)">${p.neighbourhoods?.name || '–'}</div>
+            </div>
+            ${already
+              ? '<span style="font-size:12px;color:var(--text-muted)">Tillagd</span>'
+              : `<button class="btn btn-primary btn-sm" style="padding:7px 12px" onclick="addFriend('${p.id}')"><i class="ti ti-user-plus"></i></button>`
+            }
+          </div>`;
+      }).join('');
+    }
+
+    searchBtn.addEventListener('click', doSearch);
+    searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+  }
+
+  window.addFriend = async (friendId) => {
+    const { error } = await sb.from('friendships').insert({ user_id: user.id, friend_id: friendId });
+    if (!error) { await render(); }
+  };
+
+  window.acceptFriend = async (frId) => {
+    await sb.from('friendships').update({ status: 'accepted' }).eq('id', frId);
+    await render();
+  };
+
+  window.declineFriend = async (frId) => {
+    await sb.from('friendships').delete().eq('id', frId);
+    await render();
+  };
+
+  window.sendChallenge = (friendId, friendName) => {
+    alert(`Utmaning skickad till ${friendName}! Vem tränar mest denna vecka?`);
+  };
+
+  await render();
+
+  sb.channel('friends-updates')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships' }, render)
+    .subscribe();
+})();
+</script>
+</body>
+</html>

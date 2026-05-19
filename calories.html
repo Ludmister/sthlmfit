@@ -33,6 +33,9 @@
     <button class="nav-tab" onclick="location.href='leaderboard.html'">
       <i class="ti ti-trophy"></i>Tävling
     </button>
+    <button class="nav-tab" onclick="location.href='friends.html'">
+      <i class="ti ti-users"></i>Vänner
+    </button>
     <button class="nav-tab" onclick="location.href='profile.html'">
       <i class="ti ti-user"></i>Profil
     </button>
@@ -56,9 +59,8 @@
 
   async function loadMeals() {
     const { data } = await sb.from('meals')
-      .select('id, food_name, calories')
-      .eq('user_id', user.id)
-      .eq('logged_date', todayStr)
+      .select('id, food_name, calories, protein, carbs, fat')
+      .eq('user_id', user.id).eq('logged_date', todayStr)
       .order('created_at', { ascending: true });
     return data || [];
   }
@@ -66,12 +68,11 @@
   let meals = await loadMeals();
   let searchResults = [];
 
-  function totalCal(ms) { return ms.reduce((s, m) => s + m.calories, 0); }
+  function totalCal(ms) { return ms.reduce((s, m) => s + (m.calories || 0), 0); }
+  function totalMacro(ms, key) { return Math.round(ms.reduce((s, m) => s + (m[key] || 0), 0)); }
 
   async function estimateWithAI(description) {
-    const { data, error } = await sb.functions.invoke('estimate-calories', {
-      body: { description },
-    });
+    const { data, error } = await sb.functions.invoke('estimate-calories', { body: { description } });
     if (error) throw error;
     return data;
   }
@@ -81,6 +82,9 @@
     const pct    = Math.min(100, Math.round(total / calTarget * 100));
     const isOver = total > calTarget;
     const todayLabel = new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' });
+    const protein = totalMacro(meals, 'protein');
+    const carbs   = totalMacro(meals, 'carbs');
+    const fat     = totalMacro(meals, 'fat');
 
     document.getElementById('content').innerHTML = `
       <div class="card">
@@ -99,6 +103,12 @@
               : `${(calTarget - total).toLocaleString('sv-SE')} kcal kvar`}
           </span>
         </div>
+        ${meals.length > 0 ? `
+        <div class="macro-row">
+          <div class="macro-badge"><div class="macro-val">${protein}g</div><div class="macro-label">Protein</div></div>
+          <div class="macro-badge"><div class="macro-val">${carbs}g</div><div class="macro-label">Kolhydr.</div></div>
+          <div class="macro-badge"><div class="macro-val">${fat}g</div><div class="macro-label">Fett</div></div>
+        </div>` : ''}
       </div>
 
       <div class="card">
@@ -111,7 +121,7 @@
           </label>
           <div style="display:flex;gap:8px">
             <input type="text" class="input" id="ai-input"
-              placeholder="t.ex. 'tallrik pasta bolognese'" style="flex:1" />
+              placeholder="t.ex. 'pannkakor med sylt och kaffe'" style="flex:1" />
             <button class="btn btn-primary btn-sm" id="ai-btn" style="flex-shrink:0;white-space:nowrap">
               Uppskatta
             </button>
@@ -168,11 +178,17 @@
       aiResult.style.display = 'none';
       try {
         aiEstimate = await estimateWithAI(q);
+        const p = aiEstimate.protein || 0, c = aiEstimate.carbs || 0, f = aiEstimate.fat || 0;
         aiResult.innerHTML = `
           <div style="background:var(--green-50);border-radius:var(--r-sm);padding:14px;border-left:3px solid var(--green)">
-            <div style="font-size:15px;font-weight:700;color:var(--text-sub)">${aiEstimate.food_name}</div>
+            <div style="font-size:15px;font-weight:700;color:var(--text-sub)">${aiEstimate.meal_name || aiEstimate.food_name}</div>
             <div style="font-size:26px;font-weight:900;color:var(--green);line-height:1;margin:4px 0">
               ${aiEstimate.calories} <span style="font-size:14px;font-weight:500;color:var(--text-muted)">kcal</span>
+            </div>
+            <div class="macro-row" style="margin-bottom:10px">
+              <div class="macro-badge"><div class="macro-val">${Math.round(p)}g</div><div class="macro-label">Protein</div></div>
+              <div class="macro-badge"><div class="macro-val">${Math.round(c)}g</div><div class="macro-label">Kolhydr.</div></div>
+              <div class="macro-badge"><div class="macro-val">${Math.round(f)}g</div><div class="macro-label">Fett</div></div>
             </div>
             <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;display:flex;align-items:center;gap:4px">
               <i class="ti ti-robot" style="font-size:13px"></i> Uppskattning av Claude AI
@@ -187,8 +203,13 @@
         aiResult.style.display = 'block';
         document.getElementById('ai-confirm').addEventListener('click', async () => {
           await sb.from('meals').insert({
-            user_id: user.id, food_name: aiEstimate.food_name,
-            calories: aiEstimate.calories, logged_date: todayStr,
+            user_id: user.id,
+            food_name: aiEstimate.meal_name || aiEstimate.food_name,
+            calories: aiEstimate.calories,
+            protein: Math.round(aiEstimate.protein || 0),
+            carbs: Math.round(aiEstimate.carbs || 0),
+            fat: Math.round(aiEstimate.fat || 0),
+            logged_date: todayStr,
           });
           meals = await loadMeals(); render();
         });
@@ -266,6 +287,9 @@
       user_id: user.id,
       food_name: `${p.product_name} (${grams}g)`,
       calories: Math.round(kcal100 * grams / 100),
+      protein: Math.round((p.nutriments['proteins_100g'] || 0) * grams / 100),
+      carbs:   Math.round((p.nutriments['carbohydrates_100g'] || 0) * grams / 100),
+      fat:     Math.round((p.nutriments['fat_100g'] || 0) * grams / 100),
       logged_date: todayStr,
     });
     meals = await loadMeals(); render();
