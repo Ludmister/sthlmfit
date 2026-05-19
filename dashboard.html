@@ -7,10 +7,9 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-    #map { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; }
-    .leaflet-container { font-family: 'Inter', sans-serif !important; }
-    /* Dark-map popup style */
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0D1B2A; }
+    #map { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+    .leaflet-container { font-family: 'Inter', sans-serif !important; width: 100% !important; height: 100% !important; }
     .leaflet-popup-content-wrapper {
       background: rgba(13,27,42,0.95);
       color: #fff;
@@ -25,20 +24,24 @@
     .map-popup-km    { font-size: 22px; font-weight: 900; color: var(--green); line-height: 1; }
     .map-popup-rank  { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 3px; font-weight: 600; }
     .map-popup-sub   { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 1px; }
-    /* Loading overlay */
     #loading {
       position: fixed; inset: 0; background: var(--navy);
       display: flex; align-items: center; justify-content: center;
       z-index: 200; transition: opacity 0.4s;
     }
     #loading.hidden { opacity: 0; pointer-events: none; }
+    .card-handle {
+      width: 36px; height: 4px;
+      background: rgba(255,255,255,0.22);
+      border-radius: 99px;
+      margin: 0 auto 18px;
+    }
   </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<!-- Loading -->
 <div id="loading">
   <div style="text-align:center">
     <div class="wordmark" style="margin-bottom:24px">Sthlm<span>Fit</span></div>
@@ -46,33 +49,24 @@
   </div>
 </div>
 
-<!-- Floating UI layer -->
 <div class="map-ui">
 
-  <!-- Top-left: profile button -->
   <button class="map-btn" onclick="location.href='profile.html'"
     style="top:calc(16px + env(safe-area-inset-top)); left:16px">
     <i class="ti ti-user"></i>
   </button>
 
-  <!-- Top-right: leaderboard button -->
   <button class="map-btn" onclick="location.href='leaderboard.html'"
     style="top:calc(16px + env(safe-area-inset-top)); right:16px">
     <i class="ti ti-trophy"></i>
   </button>
 
-  <!-- Bottom card -->
   <div class="map-bottom-card" id="bottom-card" style="display:none">
-
-    <div class="map-stat-grid" id="stat-grid">
-      <!-- filled by JS -->
-    </div>
-
-    <div id="card-footer" style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">
-      <!-- strava badge or log link -->
-    </div>
-
+    <div class="card-handle"></div>
+    <div class="map-stat-grid" id="stat-grid"></div>
+    <div id="card-footer" style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)"></div>
   </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -80,16 +74,67 @@
 <script src="app.js"></script>
 <script>
 const GEO = { type:'FeatureCollection', features:[
-  {type:'Feature',properties:{id:1},geometry:{type:'Polygon',coordinates:[[[18.020,59.303],[18.108,59.303],[18.108,59.334],[18.060,59.340],[18.020,59.333],[18.020,59.303]]]}},
-  {type:'Feature',properties:{id:2},geometry:{type:'Polygon',coordinates:[[[17.995,59.338],[18.063,59.338],[18.063,59.368],[17.995,59.368],[17.995,59.338]]]}},
-  {type:'Feature',properties:{id:3},geometry:{type:'Polygon',coordinates:[[[18.055,59.328],[18.140,59.328],[18.140,59.372],[18.055,59.372],[18.055,59.328]]]}},
-  {type:'Feature',properties:{id:4},geometry:{type:'Polygon',coordinates:[[[17.978,59.323],[18.048,59.323],[18.048,59.349],[17.978,59.349],[17.978,59.323]]]}},
-  {type:'Feature',properties:{id:5},geometry:{type:'Polygon',coordinates:[[[18.060,59.317],[18.083,59.317],[18.083,59.330],[18.060,59.330],[18.060,59.317]]]}},
-  {type:'Feature',properties:{id:6},geometry:{type:'Polygon',coordinates:[[[18.037,59.328],[18.078,59.328],[18.078,59.347],[18.037,59.347],[18.037,59.328]]]}},
-  {type:'Feature',properties:{id:7},geometry:{type:'Polygon',coordinates:[[[18.072,59.292],[18.118,59.292],[18.118,59.320],[18.072,59.320],[18.072,59.292]]]}},
-  {type:'Feature',properties:{id:8},geometry:{type:'Polygon',coordinates:[[[17.982,59.302],[18.040,59.302],[18.040,59.330],[17.982,59.330],[17.982,59.302]]]}},
-  {type:'Feature',properties:{id:9},geometry:{type:'Polygon',coordinates:[[[18.110,59.342],[18.218,59.342],[18.218,59.402],[18.110,59.402],[18.110,59.342]]]}},
-  {type:'Feature',properties:{id:10},geometry:{type:'Polygon',coordinates:[[[18.085,59.323],[18.172,59.323],[18.172,59.362],[18.085,59.362],[18.085,59.323]]]}},
+  // 1: Södermalm — large island south of Gamla Stan
+  {type:'Feature',properties:{id:1},geometry:{type:'Polygon',coordinates:[[[
+    18.018,59.320],[18.032,59.322],[18.048,59.322],[18.062,59.322],[18.080,59.320],
+    [18.095,59.318],[18.103,59.313],[18.105,59.306],[18.102,59.299],[18.090,59.294],
+    [18.072,59.291],[18.052,59.291],[18.034,59.295],[18.020,59.302],[18.013,59.310],
+    [18.015,59.316],[18.018,59.320
+  ]]]}},
+  // 2: Vasastan — north of Norrmalm
+  {type:'Feature',properties:{id:2},geometry:{type:'Polygon',coordinates:[[[
+    18.030,59.332],[18.044,59.330],[18.058,59.330],[18.070,59.331],[18.076,59.334],
+    [18.074,59.342],[18.069,59.351],[18.063,59.358],[18.055,59.364],[18.044,59.364],
+    [18.036,59.360],[18.031,59.350],[18.028,59.340],[18.030,59.332
+  ]]]}},
+  // 3: Östermalm — east, including Djurgårdsbrunnsviken edge
+  {type:'Feature',properties:{id:3},geometry:{type:'Polygon',coordinates:[[[
+    18.076,59.334],[18.084,59.331],[18.096,59.329],[18.108,59.328],[18.118,59.330],
+    [18.124,59.336],[18.122,59.344],[18.116,59.350],[18.108,59.354],[18.096,59.354],
+    [18.086,59.349],[18.079,59.344],[18.076,59.338],[18.076,59.334
+  ]]]}},
+  // 4: Kungsholmen — island to the west, follow water edges
+  {type:'Feature',properties:{id:4},geometry:{type:'Polygon',coordinates:[[[
+    17.998,59.322],[18.010,59.318],[18.022,59.317],[18.035,59.319],[18.044,59.324],
+    [18.046,59.330],[18.044,59.336],[18.036,59.341],[18.022,59.342],[18.010,59.340],
+    [17.999,59.336],[17.992,59.330],[17.993,59.325],[17.998,59.322
+  ]]]}},
+  // 5: Gamla Stan — small island in the centre
+  {type:'Feature',properties:{id:5},geometry:{type:'Polygon',coordinates:[[[
+    18.064,59.325],[18.068,59.322],[18.073,59.321],[18.077,59.322],[18.079,59.325],
+    [18.079,59.328],[18.076,59.330],[18.070,59.331],[18.065,59.329],[18.063,59.327],
+    [18.064,59.325
+  ]]]}},
+  // 6: Norrmalm — city centre
+  {type:'Feature',properties:{id:6},geometry:{type:'Polygon',coordinates:[[[
+    18.042,59.326],[18.054,59.323],[18.064,59.323],[18.076,59.325],[18.080,59.328],
+    [18.076,59.334],[18.070,59.331],[18.058,59.330],[18.044,59.330],[18.038,59.328],
+    [18.039,59.326],[18.042,59.326
+  ]]]}},
+  // 7: Hammarby Sjöstad — southeast
+  {type:'Feature',properties:{id:7},geometry:{type:'Polygon',coordinates:[[[
+    18.088,59.303],[18.099,59.299],[18.110,59.298],[18.122,59.299],[18.132,59.302],
+    [18.136,59.308],[18.132,59.314],[18.120,59.316],[18.106,59.315],[18.094,59.312],
+    [18.087,59.307],[18.088,59.303
+  ]]]}},
+  // 8: Liljeholmen — southwest
+  {type:'Feature',properties:{id:8},geometry:{type:'Polygon',coordinates:[[[
+    17.988,59.307],[18.002,59.301],[18.015,59.298],[18.028,59.300],[18.036,59.306],
+    [18.036,59.313],[18.030,59.319],[18.018,59.322],[18.006,59.322],[17.995,59.318],
+    [17.987,59.313],[17.988,59.307
+  ]]]}},
+  // 9: Lidingö — island to the east
+  {type:'Feature',properties:{id:9},geometry:{type:'Polygon',coordinates:[[[
+    18.122,59.343],[18.136,59.339],[18.152,59.338],[18.168,59.341],[18.179,59.348],
+    [18.178,59.358],[18.170,59.366],[18.156,59.373],[18.138,59.373],[18.124,59.366],
+    [18.117,59.356],[18.119,59.348],[18.122,59.343
+  ]]]}},
+  // 10: Djurgården — narrow peninsula to the east
+  {type:'Feature',properties:{id:10},geometry:{type:'Polygon',coordinates:[[[
+    18.090,59.333],[18.100,59.329],[18.112,59.326],[18.126,59.325],[18.140,59.326],
+    [18.154,59.329],[18.162,59.333],[18.158,59.337],[18.146,59.340],[18.130,59.341],
+    [18.114,59.339],[18.100,59.337],[18.090,59.333
+  ]]}}
 ]};
 
 function kmColor(km) {
@@ -119,7 +164,6 @@ function kmColor(km) {
     return d.toISOString().split('T')[0];
   })();
 
-  // ── Map setup (once) ──────────────────────────────
   const map = L.map('map', {
     zoomControl: false, scrollWheelZoom: true, attributionControl: true,
   }).setView([59.329, 18.068], 12);
@@ -128,7 +172,8 @@ function kmColor(km) {
     attribution: '&copy; OpenStreetMap &copy; CartoDB', maxZoom: 16,
   }).addTo(map);
 
-  // Build layers (once)
+  map.invalidateSize();
+
   const layerMap = {};
   GEO.features.forEach(f => {
     const nhId  = f.properties.id;
@@ -147,7 +192,6 @@ function kmColor(km) {
     layerMap[nhId] = { layer, nb, isMine };
   });
 
-  // Pulse own neighbourhood border
   let pulse = true;
   setInterval(() => {
     pulse = !pulse;
@@ -155,20 +199,18 @@ function kmColor(km) {
     if (mine) mine.layer.setStyle({ color: pulse ? myNhColor : 'rgba(255,255,255,0.3)', weight: pulse ? 3 : 1.5 });
   }, 900);
 
-  // ── Data + UI update ──────────────────────────────
   async function updateData() {
     const [lbRes, myWoRes] = await Promise.all([
       sb.from('weekly_km').select('*'),
       sb.from('workouts').select('km').eq('user_id', user.id).gte('logged_date', weekStart),
     ]);
 
-    const entries = lbRes.data || [];
-    const myKm    = (myWoRes.data || []).reduce((s, w) => s + Number(w.km), 0);
-    const myRow   = entries.find(e => e.id === myNhId);
-    const myRank  = entries.findIndex(e => e.id === myNhId) + 1;
+    const entries   = lbRes.data || [];
+    const myKm      = (myWoRes.data || []).reduce((s, w) => s + Number(w.km), 0);
+    const myRow     = entries.find(e => e.id === myNhId);
+    const myRank    = entries.findIndex(e => e.id === myNhId) + 1;
     const isLeading = myRank === 1 && (myRow?.total_km || 0) > 0;
 
-    // Update polygon fill colors
     entries.forEach((e, i) => {
       const ref = layerMap[e.id];
       if (!ref) return;
@@ -181,18 +223,17 @@ function kmColor(km) {
       `);
     });
 
-    // Update bottom card
     document.getElementById('stat-grid').innerHTML = `
       <div>
         <div style="font-size:17px;font-weight:800;color:#fff;line-height:1.2">${myNhName}</div>
         <div class="map-stat-label">Din stadsdel</div>
       </div>
       <div style="text-align:center">
-        <div style="font-size:44px;font-weight:900;line-height:1;letter-spacing:-3px;color:${isLeading?'var(--gold)':'#fff'}">#${myRank||'–'}</div>
+        <div style="font-size:48px;font-weight:900;line-height:1;letter-spacing:-3px;color:${isLeading?'var(--gold)':'#fff'}">#${myRank||'–'}</div>
         <div class="map-stat-label">Din rank</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:22px;font-weight:800;color:var(--green);line-height:1.1">${myKm.toFixed(1).replace('.',',')} km</div>
+        <div style="font-size:24px;font-weight:800;color:var(--green);line-height:1.1">${myKm.toFixed(1).replace('.',',')} km</div>
         <div class="map-stat-label">Denna vecka</div>
       </div>
     `;
@@ -200,7 +241,7 @@ function kmColor(km) {
     document.getElementById('card-footer').innerHTML = profile.strava_connected
       ? `<div style="display:flex;align-items:center;gap:7px">
            <i class="ti ti-brand-strava" style="color:var(--strava);font-size:16px"></i>
-           <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.55)">Strava kopplad</span>
+           <span style="font-size:13px;font-weight:600;color:var(--strava)">Strava kopplad</span>
          </div>`
       : `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
            <span style="font-size:12px;color:rgba(255,255,255,0.45);font-weight:500">Ingen Strava-koppling</span>
@@ -215,7 +256,6 @@ function kmColor(km) {
 
   await updateData();
 
-  // Realtime
   sb.channel('dashboard-live')
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'workouts' }, () => updateData())
     .subscribe();
