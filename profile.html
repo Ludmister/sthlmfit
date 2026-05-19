@@ -42,8 +42,8 @@
 
   const weekStart = (() => {
     const d = new Date(); const day = d.getDay();
-    d.setDate(d.getDate() - (day===0?6:day-1)); d.setHours(0,0,0,0);
-    return d.toISOString().split('T')[0];
+    d.setDate(d.getDate() - (day===0?6:day-1));
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   })();
 
   const [allWoRes, weekWoRes, datesRes] = await Promise.all([
@@ -73,20 +73,18 @@
   document.getElementById('content').innerHTML = `
     <div class="page-padded">
 
-      <!-- Name + neighbourhood -->
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
-        <div style="width:56px;height:56px;border-radius:50%;
-             background:${nhColor}20;border:2px solid ${nhColor}50;
+      <!-- Avatar + name + neighbourhood -->
+      <div style="display:flex;flex-direction:column;align-items:center;padding:22px 0 18px;gap:6px">
+        <div style="width:60px;height:60px;border-radius:50%;
+             background:${nhColor}22;border:2.5px solid ${nhColor};
              display:flex;align-items:center;justify-content:center;
-             font-size:22px;font-weight:900;color:${nhColor};flex-shrink:0">
+             font-size:24px;font-weight:900;color:${nhColor};margin-bottom:4px">
           ${(profile.name||'?')[0].toUpperCase()}
         </div>
-        <div>
-          <div style="font-size:19px;font-weight:800;line-height:1.2">${profile.name||'(Ej satt)'}</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-            <div style="width:8px;height:8px;border-radius:50%;background:${nhColor}"></div>
-            <div style="font-size:13px;color:var(--text-muted);font-weight:600">${nhName}</div>
-          </div>
+        <div style="font-size:20px;font-weight:800;line-height:1.2;color:var(--text)">${profile.name||'(Ej satt)'}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${nhColor}"></div>
+          <div style="font-size:13px;color:var(--text-muted);font-weight:600">${nhName}</div>
         </div>
       </div>
 
@@ -107,9 +105,9 @@
       </div>
 
       <!-- Strava -->
-      <div class="card" style="margin-bottom:16px">
+      <div class="card" style="margin-bottom:12px">
         ${profile.strava_connected ? `
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
             <div style="display:flex;align-items:center;gap:8px">
               <i class="ti ti-brand-strava" style="color:var(--strava);font-size:18px"></i>
               <span style="font-size:14px;font-weight:700;color:var(--green)">Strava kopplad</span>
@@ -119,21 +117,15 @@
             </button>
           </div>
         ` : `
-          <a href="${STRAVA_AUTH_URL}" class="btn btn-strava" style="text-decoration:none;margin-bottom:10px">
+          <a href="${STRAVA_AUTH_URL}" class="btn btn-strava" style="text-decoration:none">
             <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
           </a>
-          <div style="text-align:center;margin-top:10px">
-            <a href="log.html" style="font-size:13px;font-weight:600;color:var(--text-muted);text-decoration:none">
-              Eller logga km manuellt →
-            </a>
-          </div>
         `}
       </div>
 
-      <!-- Edit profile -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-title">Redigera profil</div>
-        <div class="field">
+      <!-- Edit -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="field" style="margin-bottom:12px">
           <label class="field-label">Namn</label>
           <input type="text" class="input" id="edit-name" value="${profile.name||''}" />
         </div>
@@ -146,7 +138,7 @@
       </div>
 
       <!-- Logout -->
-      <div style="text-align:center;padding:4px 0 8px">
+      <div style="text-align:center;padding:6px 0 12px">
         <button id="logout-btn" style="font-size:14px;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:var(--font);font-weight:500">
           Logga ut
         </button>

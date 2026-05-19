@@ -137,12 +137,12 @@ const GEO = { type:'FeatureCollection', features:[
   ]]]}}
 ]};
 
-function kmColor(km) {
-  if (!km || km <= 0) return '#2A3A4A';
-  if (km <= 15)  return '#C0DD97';
-  if (km <= 40)  return '#1D9E75';
-  if (km <= 80)  return '#085041';
-  return '#04342C';
+function kmOpacity(km) {
+  if (!km || km <= 0) return 0.30;
+  if (km <= 15)       return 0.50;
+  if (km <= 40)       return 0.68;
+  if (km <= 80)       return 0.84;
+  return 0.95;
 }
 
 (async () => {
@@ -160,13 +160,13 @@ function kmColor(km) {
 
   const weekStart = (() => {
     const d = new Date(); const day = d.getDay();
-    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); d.setHours(0,0,0,0);
-    return d.toISOString().split('T')[0];
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   })();
 
   const map = L.map('map', {
     zoomControl: false, scrollWheelZoom: true, attributionControl: true,
-  }).setView([59.329, 18.068], 12);
+  }).setView([59.3293, 18.0686], 13);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CartoDB', maxZoom: 16,
@@ -181,15 +181,16 @@ function kmColor(km) {
     if (!nb) return;
     const isMine = nhId === myNhId;
     const layer = L.geoJSON(f, {
-      style: { fillColor:'#2A3A4A', fillOpacity:0.6, color: isMine ? myNhColor : 'rgba(255,255,255,0.2)', weight: isMine ? 2.5 : 0.8 }
+      style: { fillColor: nb.color, fillOpacity: 0.30, color: nb.color, weight: isMine ? 2.5 : 1, opacity: isMine ? 1 : 0.75 }
     }).addTo(map);
+
+    const layerRef = { layer, nb, isMine, currentOpacity: 0.30 };
+    layerMap[nhId] = layerRef;
 
     layer.bindPopup('', { maxWidth:190 });
     layer.on('click', () => layer.openPopup());
-    layer.on('mouseover', () => !isMine && layer.setStyle({ fillOpacity:0.8 }));
-    layer.on('mouseout',  () => !isMine && layer.setStyle({ fillOpacity:0.6 }));
-
-    layerMap[nhId] = { layer, nb, isMine };
+    layer.on('mouseover', () => !isMine && layer.setStyle({ fillOpacity: Math.min(layerRef.currentOpacity + 0.18, 1) }));
+    layer.on('mouseout',  () => !isMine && layer.setStyle({ fillOpacity: layerRef.currentOpacity }));
   });
 
   let pulse = true;
@@ -214,7 +215,8 @@ function kmColor(km) {
     entries.forEach((e, i) => {
       const ref = layerMap[e.id];
       if (!ref) return;
-      ref.layer.setStyle({ fillColor: kmColor(e.total_km) });
+      ref.currentOpacity = kmOpacity(e.total_km);
+      ref.layer.setStyle({ fillOpacity: ref.currentOpacity });
       ref.layer.setPopupContent(`
         <div class="map-popup-name">${ref.nb.name}</div>
         <div class="map-popup-km">${Number(e.total_km).toFixed(1).replace('.',',')} km</div>
