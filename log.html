@@ -3,208 +3,119 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SthlmFit – Logga träning</title>
+  <title>SthlmFit – Logga löpning</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body style="background:var(--bg)">
+
 <div class="screen">
-
-  <div class="topbar">
-    <div class="topbar-inner">
-      <button class="topbar-back" onclick="location.href='index.html'">
-        <i class="ti ti-arrow-left"></i> Tillbaka
-      </button>
-      <div class="topbar-title">Logga träning</div>
-      <div style="width:80px"></div>
-    </div>
+  <!-- Dark header -->
+  <div class="log-hero">
+    <div class="log-hero-title"><i class="ti ti-run" style="font-size:14px;margin-right:4px"></i>LOGGA DITT LÖPPASS</div>
+    <div class="log-hero-sub" id="log-sub">Hur långt sprang du idag?</div>
   </div>
 
-  <div class="page-content">
-
+  <div style="padding:0 16px 24px;max-width:var(--max-w);margin:0 auto">
     <div class="card">
-      <div class="card-label">Aktivitet</div>
-      <div class="activity-grid" id="activity-grid"></div>
-    </div>
+      <div class="alert alert-error" id="err"></div>
 
-    <div class="card">
-      <div class="card-label">Längd</div>
-      <div class="duration-big" id="dur-val">30</div>
-      <div class="duration-unit">minuter</div>
-      <input type="range" id="dur-slider" min="5" max="180" step="5" value="30" />
-    </div>
-
-    <div class="card">
-      <div class="card-label">Intensitet</div>
-      <div class="intensity-grid">
-        <button class="intensity-btn" data-level="low">
-          <i class="ti ti-leaf"></i> Lugn
-        </button>
-        <button class="intensity-btn selected" data-level="medium">
-          <i class="ti ti-bolt"></i> Medel
-        </button>
-        <button class="intensity-btn" data-level="high">
-          <i class="ti ti-flame"></i> Intensiv
-        </button>
+      <div class="km-input-wrap">
+        <input type="number" class="km-input" id="km-input" value="5" min="0.1" max="50" step="0.1" inputmode="decimal" />
+        <div class="km-unit">km</div>
       </div>
+
+      <input type="range" class="km-slider" id="km-slider" min="0.5" max="50" step="0.5" value="5" />
+
+      <div class="km-preview" id="preview">Ange hur många km du sprang</div>
+
+      <button class="btn btn-primary" id="log-btn" style="margin-top:8px">
+        <i class="ti ti-check" style="font-size:18px"></i> Logga löpning
+      </button>
     </div>
 
-    <div class="pts-preview">
-      <div class="pts-number" id="pts-num">–</div>
-      <div class="pts-label">poäng för dig och din stadsdel</div>
+    <div class="skip-link">
+      <a href="dashboard.html">Hoppa över idag</a>
     </div>
-
-    <div class="contribution" id="contribution" style="display:none">
-      <div class="contribution-text" id="contribution-text"></div>
-    </div>
-
-    <button class="btn btn-primary btn-full" id="submit-btn">
-      <i class="ti ti-check"></i> Logga träning
-    </button>
-
   </div>
-
-  <nav class="bottom-nav">
-    <button class="nav-tab" onclick="location.href='index.html'">
-      <i class="ti ti-home"></i>Dashboard
-    </button>
-    <a class="nav-tab-log active" href="log.html">
-      <span class="icon"><i class="ti ti-plus"></i></span>Logga
-    </a>
-    <button class="nav-tab" onclick="location.href='leaderboard.html'">
-      <i class="ti ti-trophy"></i>Tävling
-    </button>
-    <button class="nav-tab" onclick="location.href='friends.html'">
-      <i class="ti ti-users"></i>Vänner
-    </button>
-    <button class="nav-tab" onclick="location.href='profile.html'">
-      <i class="ti ti-user"></i>Profil
-    </button>
-  </nav>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
 (async () => {
-  const user = await requireAuth();
+  const user    = await requireAuth();
   if (!user) return;
+  const profile = await getProfile(user.id);
+  if (!profile)  { location.href = 'onboarding.html'; return; }
 
-  const profile = await getProfile(user.id).catch(() => null);
+  const nhName = profile.neighbourhoods?.name || 'din stadsdel';
+  const nhColor = profile.neighbourhoods?.color || '#1D9E75';
 
-  const ACTIVITIES = {
-    run:   { label: 'Löpning',  icon: 'ti-run'      },
-    gym:   { label: 'Gym',      icon: 'ti-barbell'   },
-    walk:  { label: 'Promenad', icon: 'ti-walk'      },
-    cycle: { label: 'Cykel',    icon: 'ti-bike'      },
-    swim:  { label: 'Simning',  icon: 'ti-swim'      },
-  };
+  // Personalise header
+  document.getElementById('log-sub').innerHTML =
+    `Du springer för <strong style="color:#7ECFB3">${nhName}</strong>`;
 
-  let selectedActivity  = null;
-  let selectedIntensity = 'medium';
-
-  const grid   = document.getElementById('activity-grid');
-  const slider = document.getElementById('dur-slider');
-
-  Object.entries(ACTIVITIES).forEach(([key, a]) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'activity-btn';
-    btn.dataset.key = key;
-    btn.innerHTML = `<i class="ti ${a.icon}"></i><span>${a.label}</span>`;
-    btn.addEventListener('click', () => {
-      selectedActivity = key;
-      grid.querySelectorAll('.activity-btn').forEach(b =>
-        b.classList.toggle('selected', b.dataset.key === key)
-      );
-      updatePreview();
-    });
-    grid.appendChild(btn);
-  });
-
-  slider.addEventListener('input', () => {
-    document.getElementById('dur-val').textContent = slider.value;
-    updatePreview();
-  });
-
-  document.querySelectorAll('.intensity-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedIntensity = btn.dataset.level;
-      document.querySelectorAll('.intensity-btn').forEach(b =>
-        b.classList.toggle('selected', b.dataset.level === selectedIntensity)
-      );
-      updatePreview();
-    });
-  });
+  const kmInput  = document.getElementById('km-input');
+  const kmSlider = document.getElementById('km-slider');
+  const preview  = document.getElementById('preview');
+  const errEl    = document.getElementById('err');
 
   function updatePreview() {
-    const dur = parseInt(slider.value);
-    const pts = calculatePoints(selectedActivity || 'walk', dur, selectedIntensity);
-    document.getElementById('pts-num').textContent = pts;
-    updateContribution(pts, dur);
-  }
-
-  function updateContribution(pts, dur) {
-    const box  = document.getElementById('contribution');
-    const text = document.getElementById('contribution-text');
-    if (!selectedActivity || !profile) { box.style.display = 'none'; return; }
-
-    const type   = profile.goal_type;
-    const target = profile.goal_value;
-    const nhName = profile.neighbourhoods?.name || 'din stadsdel';
-    let msg = `+${pts} poäng till ${nhName}`;
-
-    if (type === 'train_more' && target) {
-      msg += ` · 1 pass mot ditt mål på ${target} pass/vecka.`;
-    } else if (type === 'gain_muscle' && selectedActivity === 'gym' && target) {
-      msg += ` · 1 gympass mot ditt mål på ${target} pass/vecka.`;
-    } else if (type === 'run_more' && selectedActivity === 'run' && target) {
-      msg += ` · ${dur} min löpning mot ditt mål på ${target} min/vecka.`;
-    } else if (type === 'lose_weight') {
-      const burned = Math.round(pts * 0.75);
-      msg += ` · ungefär ${burned} kcal förbrännt.`;
+    const km = parseFloat(kmInput.value) || 0;
+    if (km <= 0) {
+      preview.innerHTML = 'Ange hur många km du sprang';
+      preview.style.color = 'var(--text-muted)';
     } else {
-      msg += '.';
+      preview.innerHTML = `Det ger <strong>${nhName}</strong> +${km.toFixed(1).replace('.',',')} km denna vecka`;
+      preview.style.color = 'var(--text-sub)';
     }
-
-    text.textContent = msg;
-    box.style.display = 'block';
   }
 
+  kmInput.addEventListener('input', () => {
+    kmSlider.value = Math.min(50, Math.max(0.5, parseFloat(kmInput.value) || 0));
+    updatePreview();
+  });
+  kmSlider.addEventListener('input', () => {
+    kmInput.value = kmSlider.value;
+    updatePreview();
+  });
   updatePreview();
 
-  document.getElementById('submit-btn').addEventListener('click', async () => {
-    if (!selectedActivity) {
-      grid.style.outline = '2px solid var(--danger)';
-      grid.style.borderRadius = '10px';
-      setTimeout(() => { grid.style.outline = ''; }, 1400);
+  document.getElementById('log-btn').addEventListener('click', async () => {
+    errEl.className = 'alert alert-error';
+    const km = parseFloat(kmInput.value);
+
+    if (!km || km <= 0) {
+      errEl.textContent = 'Ange hur långt du sprang.';
+      errEl.className = 'alert alert-error show';
+      return;
+    }
+    if (km > 50) {
+      errEl.textContent = 'Det där verkar lite väl långt — max 50 km per dag!';
+      errEl.className = 'alert alert-error show';
       return;
     }
 
-    const dur = parseInt(slider.value);
-    const pts = calculatePoints(selectedActivity, dur, selectedIntensity);
-    const btn = document.getElementById('submit-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="ti ti-loader-2"></i> Sparar…';
+    const btn = document.getElementById('log-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Sparar…';
 
     const { error } = await sb.from('workouts').insert({
-      user_id:   user.id,
-      activity:  selectedActivity,
-      duration:  dur,
-      intensity: selectedIntensity,
-      points:    pts,
+      user_id: user.id,
+      km: Math.round(km * 100) / 100,
+      logged_date: getTodayStr(),
     });
 
     if (error) {
-      console.error(error);
-      btn.disabled = false;
-      btn.innerHTML = '<i class="ti ti-check"></i> Logga träning';
+      errEl.textContent = error.message;
+      errEl.className = 'alert alert-error show';
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Logga löpning';
       return;
     }
 
-    showPtsAnimation(pts);
+    // Success animation
     btn.innerHTML = '<i class="ti ti-check"></i> Loggat!';
-    setTimeout(() => location.href = 'index.html', 1400);
+    btn.style.background = 'var(--green-dark)';
+    setTimeout(() => location.href = 'dashboard.html', 900);
   });
 })();
 </script>

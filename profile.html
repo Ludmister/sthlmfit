@@ -11,564 +11,130 @@
 
   <div class="topbar">
     <div class="topbar-inner">
-      <div class="topbar-logo">Sthlm<span>Fit</span></div>
-      <button class="topbar-logout" id="logout-btn">Logga ut</button>
+      <div class="topbar-wordmark">Sthlm<span>Fit</span></div>
+      <button class="link-muted" id="logout-btn">Logga ut</button>
     </div>
   </div>
 
-  <!-- Stats strip -->
-  <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px">
-    <div style="max-width:430px;margin:0 auto;display:flex;gap:10px" id="stats-row">
-      <div class="stat-box" style="flex:1">
-        <div class="stat-value" id="stat-week">–</div>
-        <div class="stat-label">Poäng denna vecka</div>
-      </div>
-      <div class="stat-box" style="flex:1">
-        <div class="stat-value" id="stat-total">–</div>
-        <div class="stat-label">Totalt antal poäng</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Progress bar -->
-  <div style="background:var(--surface);padding:0 16px 12px;max-width:430px;margin:0 auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px" id="step-label">Steg 1 av 4</span>
-      <span style="font-size:11px;color:var(--text-muted)" id="step-pct">25%</span>
-    </div>
-    <div class="onboard-progress" style="margin-bottom:0">
-      <div class="onboard-progress-fill" id="progress-fill" style="width:25%"></div>
-    </div>
-  </div>
-
-  <div class="page-content" style="padding-top:4px">
-
-    <!-- ── Step 1: Om dig ────────────────────────────────────────────────── -->
-    <div id="step-1">
-      <div class="card">
-        <div class="card-title" style="display:flex;align-items:center;gap:8px">
-          <i class="ti ti-user-circle" style="color:var(--green)"></i> Om dig
-        </div>
-        <div class="alert alert-error" id="step1-error"></div>
-
-        <div class="field">
-          <label class="field-label" for="f-name">Ditt namn</label>
-          <input class="input" type="text" id="f-name" placeholder="Förnamn Efternamn" autocomplete="name" />
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label class="field-label" for="f-age">Ålder</label>
-            <input class="input" type="number" id="f-age" placeholder="25" min="10" max="100" />
-          </div>
-          <div class="field">
-            <label class="field-label" for="f-sex">Biologiskt kön</label>
-            <select class="input" id="f-sex">
-              <option value="">Välj…</option>
-              <option value="male">Man</option>
-              <option value="female">Kvinna</option>
-              <option value="other">Annat</option>
-            </select>
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label class="field-label" for="f-weight">Vikt (kg)</label>
-            <input class="input" type="number" id="f-weight" placeholder="75" min="30" max="300" step="0.1" />
-          </div>
-          <div class="field">
-            <label class="field-label" for="f-height">Längd (cm)</label>
-            <input class="input" type="number" id="f-height" placeholder="175" min="100" max="250" />
-          </div>
-        </div>
-
-        <div class="field" style="margin-bottom:0">
-          <label class="field-label">Stadsdel</label>
-          <div class="nh-grid" id="nh-grid"></div>
-        </div>
-      </div>
-
-      <button class="btn btn-primary btn-full" id="step1-btn">
-        Nästa <i class="ti ti-arrow-right"></i>
-      </button>
-    </div>
-
-    <!-- ── Step 2: Ditt mål ──────────────────────────────────────────────── -->
-    <div id="step-2" style="display:none">
-      <div class="card">
-        <div class="card-title" style="display:flex;align-items:center;gap:8px">
-          <i class="ti ti-target" style="color:var(--green)"></i> Ditt mål
-        </div>
-        <div class="alert alert-error" id="step2-error"></div>
-
-        <div class="field" style="margin-bottom:10px">
-          <label class="field-label">Välj måltyp</label>
-          <div class="goal-type-grid" id="goal-type-grid">
-            <button class="goal-type-btn" data-goal="lose_weight">
-              <span class="gt-icon"><i class="ti ti-scale"></i></span>
-              <span class="gt-text">
-                <span class="gt-name">Gå ner i vikt</span>
-                <span class="gt-sub">Spåra kalorier och sätt viktmål</span>
-              </span>
-            </button>
-            <button class="goal-type-btn" data-goal="run_more">
-              <span class="gt-icon"><i class="ti ti-run"></i></span>
-              <span class="gt-text">
-                <span class="gt-name">Spring mer</span>
-                <span class="gt-sub">Veckomål för löpminuter</span>
-              </span>
-            </button>
-            <button class="goal-type-btn" data-goal="train_more">
-              <span class="gt-icon"><i class="ti ti-barbell"></i></span>
-              <span class="gt-text">
-                <span class="gt-name">Träna mer</span>
-                <span class="gt-sub">Veckomål för träningspass</span>
-              </span>
-            </button>
-            <button class="goal-type-btn" data-goal="gain_muscle">
-              <span class="gt-icon"><i class="ti ti-building-stadium"></i></span>
-              <span class="gt-text">
-                <span class="gt-name">Bygg muskler</span>
-                <span class="gt-sub">Gympass och styrketräning</span>
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <div id="goal-value-section" style="display:none">
-          <div class="field" id="goal-value-field">
-            <label class="field-label" id="goal-value-label">Målvärde</label>
-            <input class="input" type="number" id="f-goal-value" min="1" />
-          </div>
-          <div id="weight-goal-wrap" style="display:none">
-            <div class="field-row">
-              <div class="field">
-                <label class="field-label" for="f-goal-weight">Målvikt (kg)</label>
-                <input class="input" type="number" id="f-goal-weight" placeholder="70" min="30" max="300" step="0.1" />
-              </div>
-              <div class="field">
-                <label class="field-label" for="f-deadline">Deadline</label>
-                <input class="input" type="date" id="f-deadline" />
-              </div>
-            </div>
-          </div>
-          <div id="deadline-wrap" style="display:none">
-            <div class="field">
-              <label class="field-label" for="f-deadline2">Deadline (valfritt)</label>
-              <input class="input" type="date" id="f-deadline2" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-outline" onclick="showStep(1)" style="flex:1">
-          <i class="ti ti-arrow-left"></i> Tillbaka
-        </button>
-        <button class="btn btn-primary" id="step2-btn" style="flex:2">
-          Nästa <i class="ti ti-arrow-right"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- ── Step 3: Träningsnivå ──────────────────────────────────────────── -->
-    <div id="step-3" style="display:none">
-      <div class="card">
-        <div class="card-title" style="display:flex;align-items:center;gap:8px">
-          <i class="ti ti-activity" style="color:var(--green)"></i> Träningsnivå
-        </div>
-
-        <div class="field" style="margin-bottom:16px">
-          <label class="field-label">Hur aktiv är du normalt?</label>
-          <div class="activity-level-grid">
-            <button class="activity-level-btn" data-level="sedentary">
-              <i class="ti ti-armchair al-icon"></i>
-              <div>
-                <div class="al-name">Stillasittande</div>
-                <div class="al-sub">Kontorsarbete, lite rörelse</div>
-              </div>
-            </button>
-            <button class="activity-level-btn" data-level="light">
-              <i class="ti ti-walk al-icon"></i>
-              <div>
-                <div class="al-name">Lätt aktiv</div>
-                <div class="al-sub">Promenader, tränar ibland</div>
-              </div>
-            </button>
-            <button class="activity-level-btn" data-level="active">
-              <i class="ti ti-run al-icon"></i>
-              <div>
-                <div class="al-name">Mycket aktiv</div>
-                <div class="al-sub">Tränar 4+ gånger/vecka</div>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <div class="field" style="margin-bottom:0">
-          <label class="field-label">Favoritaktiviteter (välj flera)</label>
-          <div class="pref-grid" id="pref-grid">
-            <button class="pref-option" data-key="run">
-              <i class="ti ti-run"></i> Löpning
-            </button>
-            <button class="pref-option" data-key="gym">
-              <i class="ti ti-barbell"></i> Gym
-            </button>
-            <button class="pref-option" data-key="walk">
-              <i class="ti ti-walk"></i> Promenad
-            </button>
-            <button class="pref-option" data-key="cycle">
-              <i class="ti ti-bike"></i> Cykling
-            </button>
-            <button class="pref-option" data-key="swim">
-              <i class="ti ti-swim"></i> Simning
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-outline" onclick="showStep(2)" style="flex:1">
-          <i class="ti ti-arrow-left"></i> Tillbaka
-        </button>
-        <button class="btn btn-primary" id="step3-btn" style="flex:2">
-          Nästa <i class="ti ti-arrow-right"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- ── Step 4: Sammanfattning ────────────────────────────────────────── -->
-    <div id="step-4" style="display:none">
-      <div class="card">
-        <div class="card-title" style="display:flex;align-items:center;gap:8px">
-          <i class="ti ti-sparkles" style="color:var(--green)"></i> Sammanfattning
-        </div>
-        <div class="alert alert-error" id="step4-error"></div>
-        <div class="alert alert-success" id="step4-ok"></div>
-
-        <div class="summary-card" id="summary-card">
-          <div class="summary-title">Ditt mål</div>
-          <div class="summary-text" id="summary-text">Beräknar…</div>
-        </div>
-
-        <div style="height:16px"></div>
-
-        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-sub)" id="summary-details"></div>
-      </div>
-
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-outline" onclick="showStep(3)" style="flex:1">
-          <i class="ti ti-arrow-left"></i> Tillbaka
-        </button>
-        <button class="btn btn-primary" id="save-btn" style="flex:2">
-          <i class="ti ti-device-floppy"></i> Spara profil
-        </button>
-      </div>
-    </div>
-
+  <div class="page" id="content">
+    <div class="spinner"></div>
   </div>
 
   <nav class="bottom-nav">
-    <button class="nav-tab" onclick="location.href='index.html'">
+    <button class="nav-tab" onclick="location.href='dashboard.html'">
       <i class="ti ti-home"></i>Dashboard
-    </button>
-    <a class="nav-tab-log" href="log.html">
-      <span class="icon"><i class="ti ti-plus"></i></span>Logga
-    </a>
-    <button class="nav-tab" onclick="location.href='leaderboard.html'">
-      <i class="ti ti-trophy"></i>Tävling
-    </button>
-    <button class="nav-tab" onclick="location.href='friends.html'">
-      <i class="ti ti-users"></i>Vänner
     </button>
     <button class="nav-tab active" onclick="location.href='profile.html'">
       <i class="ti ti-user"></i>Profil
     </button>
   </nav>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
-function countUp(el, target) {
-  if (!el || target === 0) return;
-  const steps = 20, step = Math.ceil(target / steps);
-  let cur = 0;
-  const t = setInterval(() => {
-    cur = Math.min(cur + step, target);
-    el.textContent = cur;
-    if (cur >= target) clearInterval(t);
-  }, 700 / steps);
-}
-
-const GOAL_CONFIG = {
-  lose_weight: { label: 'Dagligt kalorigål (kcal)?', min: 800,  max: 9999, default: 1800 },
-  run_more:    { label: 'Min löpning per vecka?',    min: 10,   max: 9999, default: 120  },
-  train_more:  { label: 'Träningspass per vecka?',   min: 1,    max: 7,    default: 4    },
-  gain_muscle: { label: 'Gympass per vecka?',        min: 1,    max: 7,    default: 3    },
-};
-
-let selectedNhId      = null;
-let selectedGoal      = null;
-let selectedLevel     = null;
-let selectedActivities = new Set();
-let profile           = null;
-
-function showStep(n) {
-  [1,2,3,4].forEach(i => {
-    document.getElementById('step-' + i).style.display = i === n ? 'block' : 'none';
-  });
-  const pcts = { 1: 25, 2: 50, 3: 75, 4: 100 };
-  document.getElementById('progress-fill').style.width = pcts[n] + '%';
-  document.getElementById('step-label').textContent = `Steg ${n} av 4`;
-  document.getElementById('step-pct').textContent = pcts[n] + '%';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.classList.add('show'); }
-function hideError(id) { document.getElementById(id).classList.remove('show'); }
-
-function buildSummary() {
-  const type    = selectedGoal || profile?.goal_type;
-  const valEl   = document.getElementById('f-goal-value');
-  const target  = valEl ? parseFloat(valEl.value) || 0 : (profile?.goal_value || 0);
-  const cwEl    = document.getElementById('f-weight');
-  const cw      = cwEl ? parseFloat(cwEl.value) || 0 : (profile?.current_weight || 0);
-  const gwEl    = document.getElementById('f-goal-weight');
-  const gw      = gwEl ? parseFloat(gwEl.value) || 0 : (profile?.goal_weight || 0);
-  const dlEl    = document.getElementById('f-deadline') || document.getElementById('f-deadline2');
-  const deadline = dlEl?.value || profile?.goal_deadline || '';
-
-  function fmtDate(d) {
-    if (!d) return '';
-    return new Date(d).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' });
-  }
-
-  let text = '';
-  if (type === 'lose_weight') {
-    if (cw > 0 && gw > 0 && deadline) {
-      const days   = Math.max(1, Math.round((new Date(deadline) - new Date()) / 86400000));
-      const kgLose = Math.max(0, cw - gw).toFixed(1);
-      const deficit = Math.round((parseFloat(kgLose) * 7700) / days);
-      text = `Gå ner ${kgLose} kg till ${fmtDate(deadline)} — du behöver ett kaloriunderskott på ~${deficit} kcal/dag. Håll dig under ${target || 1800} kcal dagligen.`;
-    } else {
-      text = `Håll dig under ${target || 1800} kcal per dag. Loggade måltider ger dig full kontroll!`;
-    }
-  } else if (type === 'run_more') {
-    if (deadline) {
-      const weeks = Math.max(1, Math.round((new Date(deadline) - new Date()) / 604800000));
-      text = `Spring ${target} min/vecka — ${weeks} veckor kvar till ${fmtDate(deadline)}.`;
-    } else {
-      text = `Spring ${target} min per vecka. Varje löptur ger poäng till din stadsdel!`;
-    }
-  } else if (type === 'train_more') {
-    text = `Träna ${target} gånger per vecka. Varje loggat pass ger poäng till dig och din stadsdel!`;
-  } else if (type === 'gain_muscle') {
-    text = `Gymma ${target} gånger per vecka. Gympass och tunga lyft ger flest poäng!`;
-  } else {
-    text = 'Fyll i ditt mål ovan för att se en personlig sammanfattning.';
-  }
-
-  document.getElementById('summary-text').textContent = text;
-
-  // Details
-  const name   = document.getElementById('f-name')?.value || profile?.username || '';
-  const nhName = NEIGHBOURHOODS.find(n => n.id === selectedNhId)?.name || profile?.neighbourhoods?.name || '–';
-  const details = [
-    name    ? `<i class="ti ti-user" style="color:var(--green)"></i> ${name}` : null,
-    nhName  ? `<i class="ti ti-map-pin" style="color:var(--green)"></i> ${nhName}` : null,
-    selectedLevel ? `<i class="ti ti-activity" style="color:var(--green)"></i> ${
-      { sedentary: 'Stillasittande', light: 'Lätt aktiv', active: 'Mycket aktiv' }[selectedLevel]
-    }` : null,
-    selectedActivities.size > 0 ? `<i class="ti ti-heart" style="color:var(--green)"></i> ${
-      [...selectedActivities].map(k => ({run:'Löpning',gym:'Gym',walk:'Promenad',cycle:'Cykling',swim:'Simning'})[k]).join(', ')
-    }` : null,
-  ].filter(Boolean);
-
-  document.getElementById('summary-details').innerHTML = details
-    .map(d => `<div style="display:flex;align-items:center;gap:8px">${d}</div>`)
-    .join('');
-}
-
 (async () => {
-  const user = await requireAuth();
+  const user    = await requireAuth();
   if (!user) return;
+  const profile = await getProfile(user.id);
+  if (!profile)  { location.href = 'onboarding.html'; return; }
 
-  profile = await getProfile(user.id).catch(() => null);
+  const nhColor = profile.neighbourhoods?.color || '#1D9E75';
+  const nhName  = profile.neighbourhoods?.name  || '–';
 
-  // Stats
-  const weekStart = formatDate(getWeekStart());
-  const [{ data: wkWk }, { data: wkAll }] = await Promise.all([
-    sb.from('workouts').select('points').eq('user_id', user.id).gte('created_at', weekStart),
-    sb.from('workouts').select('points').eq('user_id', user.id),
-  ]);
-  const weekPts  = (wkWk  || []).reduce((s, w) => s + (w.points || 0), 0);
-  const totalPts = (wkAll || []).reduce((s, w) => s + (w.points || 0), 0);
-  countUp(document.getElementById('stat-week'),  weekPts);
-  countUp(document.getElementById('stat-total'), totalPts);
+  // Weekly & total km
+  const weekStart = (() => {
+    const d = new Date(); const day = d.getDay();
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); d.setHours(0,0,0,0);
+    return d.toISOString().split('T')[0];
+  })();
 
-  // Pre-populate fields from existing profile
-  if (profile) {
-    if (profile.username)         document.getElementById('f-name').value   = profile.username;
-    if (profile.age)              document.getElementById('f-age').value    = profile.age;
-    if (profile.sex)              document.getElementById('f-sex').value    = profile.sex;
-    if (profile.current_weight)   document.getElementById('f-weight').value = profile.current_weight;
-    if (profile.height)           document.getElementById('f-height').value = profile.height;
-    if (profile.neighbourhood_id) {
-      selectedNhId = profile.neighbourhood_id;
-    }
-    if (profile.goal_type) {
-      selectedGoal = profile.goal_type;
-    }
-    if (profile.activity_level) {
-      selectedLevel = profile.activity_level;
-    }
-    if (Array.isArray(profile.preferred_activities)) {
-      profile.preferred_activities.forEach(k => selectedActivities.add(k));
-    }
-  }
+  const { data: allWo }  = await sb.from('workouts').select('km').eq('user_id', user.id);
+  const { data: weekWo } = await sb.from('workouts').select('km').eq('user_id', user.id).gte('logged_date', weekStart);
+  const totalKm = (allWo  || []).reduce((s, w) => s + Number(w.km), 0);
+  const weekKm  = (weekWo || []).reduce((s, w) => s + Number(w.km), 0);
 
-  // Neighbourhood grid
-  const nhGrid = document.getElementById('nh-grid');
+  document.getElementById('content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+      <div style="width:60px;height:60px;border-radius:50%;background:${nhColor}20;border:2px solid ${nhColor}40;
+           display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:${nhColor};flex-shrink:0">
+        ${(profile.name || '?')[0].toUpperCase()}
+      </div>
+      <div>
+        <div style="font-size:20px;font-weight:800;line-height:1.2">${profile.name || '(Ej satt)'}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${nhColor}"></div>
+          <div style="font-size:13px;color:var(--text-muted);font-weight:500">${nhName}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-val">${weekKm.toFixed(1).replace('.',',')}</div>
+        <div class="stat-lbl">km denna vecka</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">${totalKm.toFixed(0)}</div>
+        <div class="stat-lbl">km totalt</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Redigera profil</div>
+      <div class="field">
+        <label class="field-label">Namn</label>
+        <input type="text" class="input" id="edit-name" value="${profile.name || ''}" />
+      </div>
+      <div class="field-label" style="margin-bottom:8px">Stadsdel</div>
+      <div class="nh-grid" id="nh-grid"></div>
+      <button class="btn btn-primary" id="save-btn" style="margin-top:16px">
+        <i class="ti ti-check"></i> Spara ändringar
+      </button>
+      <div class="alert" id="save-msg" style="margin-top:12px"></div>
+    </div>
+
+    <button class="btn btn-outline btn-full" id="logout-btn2" style="margin-top:12px">
+      <i class="ti ti-logout"></i> Logga ut
+    </button>
+  `;
+
+  // Build nh grid
+  let selectedNh = profile.neighbourhood_id;
+  const grid = document.getElementById('nh-grid');
   NEIGHBOURHOODS.forEach(nh => {
-    const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'nh-option'; btn.dataset.id = nh.id;
-    if (nh.id === selectedNhId) btn.classList.add('selected');
-    btn.innerHTML = `<span class="nh-color-dot" style="background:${nh.color}"></span>${nh.name}`;
-    btn.addEventListener('click', () => {
-      selectedNhId = nh.id;
-      nhGrid.querySelectorAll('.nh-option').forEach(b =>
-        b.classList.toggle('selected', Number(b.dataset.id) === nh.id)
-      );
+    const card = document.createElement('button');
+    card.className = 'nh-card' + (nh.id === selectedNh ? ' selected' : '');
+    card.innerHTML = `<div class="nh-dot" style="background:${nh.color}"></div><div class="nh-name">${nh.name}</div>`;
+    card.addEventListener('click', () => {
+      selectedNh = nh.id;
+      grid.querySelectorAll('.nh-card').forEach(c => c.classList.toggle('selected', c === card));
     });
-    nhGrid.appendChild(btn);
+    grid.appendChild(card);
   });
 
-  // Goal type buttons
-  document.querySelectorAll('.goal-type-btn').forEach(btn => {
-    if (btn.dataset.goal === selectedGoal) btn.classList.add('selected');
-    btn.addEventListener('click', () => {
-      selectedGoal = btn.dataset.goal;
-      document.querySelectorAll('.goal-type-btn').forEach(b => b.classList.toggle('selected', b === btn));
-      const cfg = GOAL_CONFIG[selectedGoal];
-      const inp = document.getElementById('f-goal-value');
-      document.getElementById('goal-value-label').textContent = cfg.label;
-      inp.min = cfg.min; inp.max = cfg.max;
-      if (!inp.value) inp.value = cfg.default;
-      document.getElementById('goal-value-section').style.display = 'block';
-      document.getElementById('weight-goal-wrap').style.display = selectedGoal === 'lose_weight' ? 'block' : 'none';
-      document.getElementById('deadline-wrap').style.display = selectedGoal !== 'lose_weight' ? 'block' : 'none';
-      hideError('step2-error');
-    });
-  });
-  if (selectedGoal) {
-    const cfg = GOAL_CONFIG[selectedGoal];
-    document.getElementById('goal-value-label').textContent = cfg.label;
-    const inp = document.getElementById('f-goal-value');
-    inp.min = cfg.min; inp.max = cfg.max;
-    inp.value = profile?.goal_value || cfg.default;
-    document.getElementById('goal-value-section').style.display = 'block';
-    document.getElementById('weight-goal-wrap').style.display = selectedGoal === 'lose_weight' ? 'block' : 'none';
-    document.getElementById('deadline-wrap').style.display = selectedGoal !== 'lose_weight' ? 'block' : 'none';
-    if (profile?.goal_weight)   document.getElementById('f-goal-weight').value = profile.goal_weight;
-    if (profile?.goal_deadline) {
-      const dlEl = document.getElementById(selectedGoal === 'lose_weight' ? 'f-deadline' : 'f-deadline2');
-      if (dlEl) dlEl.value = profile.goal_deadline;
-    }
-  }
-
-  // Activity level
-  document.querySelectorAll('.activity-level-btn').forEach(btn => {
-    if (btn.dataset.level === selectedLevel) btn.classList.add('selected');
-    btn.addEventListener('click', () => {
-      selectedLevel = btn.dataset.level;
-      document.querySelectorAll('.activity-level-btn').forEach(b =>
-        b.classList.toggle('selected', b === btn)
-      );
-    });
-  });
-
-  // Preferred activities
-  document.querySelectorAll('.pref-option').forEach(btn => {
-    if (selectedActivities.has(btn.dataset.key)) btn.classList.add('selected');
-    btn.addEventListener('click', () => {
-      const k = btn.dataset.key;
-      if (selectedActivities.has(k)) { selectedActivities.delete(k); btn.classList.remove('selected'); }
-      else { selectedActivities.add(k); btn.classList.add('selected'); }
-    });
-  });
-
-  // ── Step navigation ──
-  document.getElementById('step1-btn').addEventListener('click', () => {
-    hideError('step1-error');
-    const name = document.getElementById('f-name').value.trim();
-    if (!name)        { showError('step1-error', 'Ange ditt namn.'); return; }
-    if (!selectedNhId){ showError('step1-error', 'Välj en stadsdel.'); return; }
-    showStep(2);
-  });
-
-  document.getElementById('step2-btn').addEventListener('click', () => {
-    hideError('step2-error');
-    if (!selectedGoal) { showError('step2-error', 'Välj en måltyp.'); return; }
-    const v = parseFloat(document.getElementById('f-goal-value').value);
-    if (!v || v <= 0) { showError('step2-error', 'Ange ett giltigt målvärde.'); return; }
-    showStep(3);
-  });
-
-  document.getElementById('step3-btn').addEventListener('click', () => {
-    buildSummary();
-    showStep(4);
-  });
-
-  // ── Save ──
+  // Save
   document.getElementById('save-btn').addEventListener('click', async () => {
-    hideError('step4-error');
-    document.getElementById('step4-ok').classList.remove('show');
-
-    const btn = document.getElementById('save-btn');
+    const name = document.getElementById('edit-name').value.trim();
+    const btn  = document.getElementById('save-btn');
+    const msg  = document.getElementById('save-msg');
     btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Sparar…';
-
-    const deadlineVal = (document.getElementById('f-deadline')?.value ||
-                         document.getElementById('f-deadline2')?.value) || null;
-
-    const payload = {
-      id:                   user.id,
-      username:             document.getElementById('f-name').value.trim() || profile?.username,
-      age:                  parseInt(document.getElementById('f-age').value) || null,
-      sex:                  document.getElementById('f-sex').value || null,
-      current_weight:       parseFloat(document.getElementById('f-weight').value) || null,
-      height:               parseFloat(document.getElementById('f-height').value) || null,
-      neighbourhood_id:     selectedNhId,
-      goal_type:            selectedGoal,
-      goal_value:           parseFloat(document.getElementById('f-goal-value').value) || null,
-      goal_weight:          parseFloat(document.getElementById('f-goal-weight')?.value) || null,
-      goal_deadline:        deadlineVal,
-      activity_level:       selectedLevel,
-      preferred_activities: JSON.stringify([...selectedActivities]),
-    };
-
-    const { error } = await sb.from('profiles').upsert(payload);
-
-    btn.disabled = false;
-    btn.innerHTML = '<i class="ti ti-device-floppy"></i> Spara profil';
-
+    const { error } = await sb.from('profiles').update({ name, neighbourhood_id: selectedNh }).eq('id', user.id);
     if (error) {
-      showError('step4-error', 'Kunde inte spara: ' + error.message);
+      msg.textContent = error.message; msg.className = 'alert alert-error show';
     } else {
-      const ok = document.getElementById('step4-ok');
-      ok.textContent = 'Profilen sparad!';
-      ok.classList.add('show');
-      setTimeout(() => ok.classList.remove('show'), 3000);
+      msg.textContent = 'Sparat!'; msg.className = 'alert alert-success show';
+      setTimeout(() => { msg.className = 'alert'; }, 2500);
     }
+    btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Spara ändringar';
   });
 
   // Logout
-  document.getElementById('logout-btn').addEventListener('click', async () => {
-    await sb.auth.signOut();
-    window.location.href = 'login.html';
-  });
-
-  showStep(1);
+  async function doLogout() {
+    await sb.auth.signOut(); location.href = 'login.html';
+  }
+  document.getElementById('logout-btn').addEventListener('click', doLogout);
+  document.getElementById('logout-btn2').addEventListener('click', doLogout);
 })();
 </script>
 </body>

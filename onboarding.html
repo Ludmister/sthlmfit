@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SthlmFit – Kom igång</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="dark-page">
+  <!-- Same Stockholm skyline -->
+  <svg class="skyline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" preserveAspectRatio="xMidYMax slice">
+    <path fill="#1A2E42" d="
+      M0,200 L0,158
+      L22,158 L22,148 L38,148 L38,140 L50,140
+      L50,92 L53,92 L53,48 L55,40 L57,26 L59,14 L61,14
+      L63,26 L65,40 L67,48 L67,92
+      L82,92 L82,108 L95,108 L95,120 L112,120
+      L112,135 L130,135 L130,145 L150,145
+      L150,140 L162,140 L162,125
+      L175,125 L175,112 L188,112 L188,118
+      L195,118 L195,102 L205,102 L205,90
+      L210,75 L213,55 L215,32 L217,55 L219,75
+      L219,90 L228,90 L228,102 L242,102 L242,115
+      L258,115 L258,105 L272,105
+      L272,88 L290,88 L290,98
+      L305,98 L305,80 L325,80 L325,95 L342,95
+      L342,68 L362,68 L362,95
+      L378,95 L378,108 L398,108 L398,118
+      L420,118 L420,128 L448,128 L448,136
+      L478,136 L478,142 L515,142 L515,146
+      L558,146 L558,150 L610,150 L610,153
+      L800,153 L800,200 Z"/>
+    <path fill="#1A2E42" opacity="0.4"
+      d="M0,157 Q200,153 400,158 Q600,162 800,156 L800,167 Q600,170 400,165 Q200,160 0,164 Z"/>
+  </svg>
+
+  <div class="content">
+    <div class="wordmark">Sthlm<span>Fit</span></div>
+
+    <div class="progress-bar" style="max-width:var(--max-w)">
+      <div class="progress-fill" id="progress" style="width:50%"></div>
+    </div>
+
+    <!-- Step 1: Name -->
+    <div id="step1" style="width:100%">
+      <h1 class="dark-headline" style="margin-bottom:20px">Vad heter du?</h1>
+      <div class="card">
+        <div class="alert alert-error" id="err1"></div>
+        <div class="field">
+          <label class="field-label">Förnamn</label>
+          <input type="text" class="input" id="name" placeholder="t.ex. Emma" autocomplete="given-name" autocapitalize="words" />
+        </div>
+        <button class="btn btn-primary" id="next1-btn">Nästa <i class="ti ti-arrow-right" style="font-size:16px"></i></button>
+      </div>
+    </div>
+
+    <!-- Step 2: Neighbourhood -->
+    <div id="step2" style="width:100%;display:none">
+      <h1 class="dark-headline" style="margin-bottom:20px">Vilken stadsdel representerar du?</h1>
+      <div class="card">
+        <div class="alert alert-error" id="err2"></div>
+        <div class="nh-grid" id="nh-grid"></div>
+        <button class="btn btn-primary" id="save-btn" style="margin-top:16px">
+          <i class="ti ti-run" style="font-size:17px"></i> Kom igång!
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+(async () => {
+  const user = await requireAuth();
+  if (!user) return;
+
+  // Already has profile → log
+  const existing = await getProfile(user.id);
+  if (existing) { location.href = 'log.html'; return; }
+
+  let selectedNh = null;
+
+  // Build neighbourhood grid
+  const grid = document.getElementById('nh-grid');
+  NEIGHBOURHOODS.forEach(nh => {
+    const card = document.createElement('button');
+    card.className = 'nh-card';
+    card.innerHTML = `<div class="nh-dot" style="background:${nh.color}"></div><div class="nh-name">${nh.name}</div>`;
+    card.addEventListener('click', () => {
+      selectedNh = nh.id;
+      grid.querySelectorAll('.nh-card').forEach(c => c.classList.toggle('selected', c === card));
+    });
+    grid.appendChild(card);
+  });
+
+  // Step 1: name
+  const nameEl = document.getElementById('name');
+  function nextStep1() {
+    const name = nameEl.value.trim();
+    if (!name) { const e = document.getElementById('err1'); e.textContent='Fyll i ditt namn.'; e.className='alert alert-error show'; return; }
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'block';
+    document.getElementById('progress').style.width = '100%';
+  }
+  document.getElementById('next1-btn').addEventListener('click', nextStep1);
+  nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') nextStep1(); });
+
+  // Step 2: save
+  document.getElementById('save-btn').addEventListener('click', async () => {
+    if (!selectedNh) {
+      const e = document.getElementById('err2'); e.textContent='Välj din stadsdel.'; e.className='alert alert-error show'; return;
+    }
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Sparar…';
+    const { error } = await sb.from('profiles').insert({
+      id: user.id,
+      name: document.getElementById('name').value.trim(),
+      neighbourhood_id: selectedNh,
+    });
+    if (error) {
+      const e = document.getElementById('err2'); e.textContent = error.message; e.className = 'alert alert-error show';
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-run"></i> Kom igång!';
+      return;
+    }
+    location.href = 'log.html';
+  });
+})();
+</script>
+</body>
+</html>

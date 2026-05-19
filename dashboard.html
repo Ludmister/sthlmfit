@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SthlmFit – Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    .leaflet-container { font-family: var(--font); }
+    .map-popup-name { font-size:15px; font-weight:800; color:var(--text); margin-bottom:5px; }
+    .map-popup-km   { font-size:22px; font-weight:900; color:var(--green); line-height:1; }
+    .map-popup-sub  { font-size:12px; color:var(--text-muted); margin-top:3px; }
+  </style>
+</head>
+<body>
+<div class="screen">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-wordmark">Sthlm<span>Fit</span></div>
+      <div class="topbar-nh" id="nh-badge" style="display:none">
+        <div class="topbar-nh-dot" id="nh-dot"></div>
+        <span id="nh-name">…</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-full" id="content">
+    <div class="spinner"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab active" onclick="location.href='dashboard.html'">
+      <i class="ti ti-home"></i>Dashboard
+    </button>
+    <button class="nav-tab" onclick="location.href='profile.html'">
+      <i class="ti ti-user"></i>Profil
+    </button>
+  </nav>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+<script>
+// Approximate GeoJSON polygons for Stockholm neighbourhoods
+const GEO = { type:"FeatureCollection", features:[
+  {type:"Feature",properties:{id:1},geometry:{type:"Polygon",coordinates:[[[18.020,59.303],[18.108,59.303],[18.108,59.334],[18.060,59.340],[18.020,59.333],[18.020,59.303]]]}},
+  {type:"Feature",properties:{id:2},geometry:{type:"Polygon",coordinates:[[[17.995,59.338],[18.063,59.338],[18.063,59.368],[17.995,59.368],[17.995,59.338]]]}},
+  {type:"Feature",properties:{id:3},geometry:{type:"Polygon",coordinates:[[[18.055,59.328],[18.140,59.328],[18.140,59.372],[18.055,59.372],[18.055,59.328]]]}},
+  {type:"Feature",properties:{id:4},geometry:{type:"Polygon",coordinates:[[[17.978,59.323],[18.048,59.323],[18.048,59.349],[17.978,59.349],[17.978,59.323]]]}},
+  {type:"Feature",properties:{id:5},geometry:{type:"Polygon",coordinates:[[[18.060,59.317],[18.083,59.317],[18.083,59.330],[18.060,59.330],[18.060,59.317]]]}},
+  {type:"Feature",properties:{id:6},geometry:{type:"Polygon",coordinates:[[[18.037,59.328],[18.078,59.328],[18.078,59.347],[18.037,59.347],[18.037,59.328]]]}},
+  {type:"Feature",properties:{id:7},geometry:{type:"Polygon",coordinates:[[[18.072,59.292],[18.118,59.292],[18.118,59.320],[18.072,59.320],[18.072,59.292]]]}},
+  {type:"Feature",properties:{id:8},geometry:{type:"Polygon",coordinates:[[[17.982,59.302],[18.040,59.302],[18.040,59.330],[17.982,59.330],[17.982,59.302]]]}},
+  {type:"Feature",properties:{id:9},geometry:{type:"Polygon",coordinates:[[[18.110,59.342],[18.218,59.342],[18.218,59.402],[18.110,59.402],[18.110,59.342]]]}},
+  {type:"Feature",properties:{id:10},geometry:{type:"Polygon",coordinates:[[[18.085,59.323],[18.172,59.323],[18.172,59.362],[18.085,59.362],[18.085,59.323]]]}},
+]};
+
+function kmColor(km) {
+  if (!km || km <= 0) return '#E8E8E8';
+  if (km <= 20)  return '#C0DD97';
+  if (km <= 50)  return '#1D9E75';
+  if (km <= 100) return '#085041';
+  return '#04342C';
+}
+
+(async () => {
+  const user = await requireAuth();
+  if (!user) return;
+
+  const profile = await getProfile(user.id);
+  if (!profile) { location.href = 'onboarding.html'; return; }
+
+  const myNhId    = profile.neighbourhood_id;
+  const myNhColor = profile.neighbourhoods?.color || '#1D9E75';
+  const myNhName  = profile.neighbourhoods?.name || '–';
+
+  // Topbar badge
+  document.getElementById('nh-badge').style.display = 'inline-flex';
+  document.getElementById('nh-dot').style.background = myNhColor;
+  document.getElementById('nh-name').textContent = myNhName;
+
+  async function render() {
+    const { data: rows } = await sb.from('weekly_km').select('*');
+    const entries = rows || [];
+    const leader  = entries[0];
+    const maxKm   = Math.max(leader?.total_km || 0, 0.1);
+    const myRow   = entries.find(e => e.id === myNhId);
+
+    document.getElementById('content').innerHTML = `
+      <div style="padding:20px 16px 0">
+        <div class="section-head">Vem äger Stockholm denna vecka?</div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="lb-table" style="padding:0 20px">
+            ${entries.map((e, i) => {
+              const pct   = Math.round((e.total_km / maxKm) * 100);
+              const isMine = e.id === myNhId;
+              const rankCls = i===0?'r1':i===1?'r2':i===2?'r3':'';
+              return `
+                <div class="lb-row${isMine?' mine':''}${i===0&&e.total_km>0?' leader':''}">
+                  <div class="lb-rank ${rankCls}">${i+1}</div>
+                  <div class="lb-dot" style="background:${e.color}"></div>
+                  <div class="lb-name">
+                    ${e.name}
+                    ${isMine ? '<span class="lb-du" style="margin-left:4px">DU</span>' : ''}
+                  </div>
+                  <div class="lb-bar-wrap">
+                    <div class="lb-bar-track">
+                      <div class="lb-bar-fill" style="width:${pct}%;background:${e.color}"></div>
+                    </div>
+                  </div>
+                  <div class="lb-km">${Number(e.total_km).toFixed(1).replace('.',',')} km</div>
+                </div>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <div class="countdown" style="justify-content:space-between;margin-top:12px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="live-dot"></div>
+            <span>Återställs om</span>
+            <span class="countdown-val" id="cd">…</span>
+          </div>
+          <button class="btn btn-outline btn-sm btn-full" style="width:auto;padding:10px 16px"
+            onclick="location.href='log.html'">
+            <i class="ti ti-run" style="font-size:15px"></i> Logga fler km
+          </button>
+        </div>
+      </div>
+
+      <div style="padding:20px 16px 0">
+        <div class="section-head">Stockholm på kartan</div>
+      </div>
+      <div id="map" style="height:420px"></div>
+      <div style="height:calc(var(--nav-h) + 20px)"></div>
+    `;
+
+    // Countdown
+    function tick() { const el = document.getElementById('cd'); if (el) el.textContent = getCountdown(); }
+    tick(); setInterval(tick, 1000);
+
+    // Build km map
+    const kmMap = Object.fromEntries(entries.map(e => [e.id, { km: e.total_km, runners: e.active_runners }]));
+
+    const map = L.map('map', { zoomControl: false, scrollWheelZoom: false, attributionControl: true })
+      .setView([59.329, 18.068], 11);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CartoDB', maxZoom: 16,
+    }).addTo(map);
+
+    let myLayer = null;
+    GEO.features.forEach(feature => {
+      const nhId   = feature.properties.id;
+      const nb     = NEIGHBOURHOODS.find(n => n.id === nhId);
+      if (!nb) return;
+      const data   = kmMap[nhId] || { km: 0, runners: 0 };
+      const color  = kmColor(data.km);
+      const isMine = nhId === myNhId;
+
+      const layer = L.geoJSON(feature, {
+        style: {
+          fillColor: color, fillOpacity: 0.75,
+          color: isMine ? myNhColor : '#fff',
+          weight: isMine ? 2.5 : 1,
+        }
+      }).addTo(map);
+
+      const popup = `<div class="map-popup-name">${nb.name}</div>
+        <div class="map-popup-km">${Number(data.km).toFixed(1).replace('.',',')} km</div>
+        <div class="map-popup-sub">${data.runners} aktiva löpare denna vecka</div>`;
+      layer.bindPopup(popup, { maxWidth: 180 });
+      layer.on('mouseover', () => layer.setStyle({ fillOpacity: 0.9 }));
+      layer.on('mouseout',  () => layer.setStyle({ fillOpacity: 0.75 }));
+
+      if (isMine) { myLayer = layer; }
+    });
+
+    // Pulse own neighbourhood border
+    if (myLayer) {
+      let pulse = true;
+      setInterval(() => {
+        pulse = !pulse;
+        myLayer.setStyle({
+          color: pulse ? myNhColor : 'rgba(255,255,255,0.5)',
+          weight: pulse ? 3 : 1.5,
+        });
+      }, 900);
+    }
+  }
+
+  await render();
+
+  // Live updates
+  sb.channel('dashboard-live')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'workouts' }, render)
+    .subscribe();
+})();
+</script>
+</body>
+</html>

@@ -3,197 +3,87 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SthlmFit — Logga in</title>
+  <title>SthlmFit</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="onboard-wrap">
+<div class="dark-page">
+  <svg class="skyline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" preserveAspectRatio="xMidYMax slice">
+    <!-- Stockholm skyline silhouette: Stadshuset tower (left), Gamla Stan spire (center), Norrmalm (right) -->
+    <path fill="#1A2E42" d="
+      M0,200 L0,158
+      L22,158 L22,148 L38,148 L38,140 L50,140
+      L50,92 L53,92 L53,48 L55,40 L57,26 L59,14 L61,14
+      L63,26 L65,40 L67,48 L67,92
+      L82,92 L82,108 L95,108 L95,120 L112,120
+      L112,135 L130,135 L130,145 L150,145
+      L150,140 L162,140 L162,125
+      L175,125 L175,112 L188,112 L188,118
+      L195,118 L195,102 L205,102 L205,90
+      L210,75 L213,55 L215,32 L217,55 L219,75
+      L219,90 L228,90 L228,102 L242,102 L242,115
+      L258,115 L258,105 L272,105
+      L272,88 L290,88 L290,98
+      L305,98 L305,80 L325,80 L325,95 L342,95
+      L342,68 L362,68 L362,95
+      L378,95 L378,108 L398,108 L398,118
+      L420,118 L420,128 L448,128 L448,136
+      L478,136 L478,142 L515,142 L515,146
+      L558,146 L558,150 L610,150 L610,153
+      L800,153 L800,200 Z"/>
+    <!-- Mälaren water line -->
+    <path fill="#1A2E42" opacity="0.4"
+      d="M0,157 Q200,153 400,158 Q600,162 800,156 L800,167 Q600,170 400,165 Q200,160 0,164 Z"/>
+  </svg>
 
-  <!-- Stockholm skyline hero -->
-  <div class="hero-wrap">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 130" preserveAspectRatio="xMidYMax meet">
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#E4F5EE"/>
-          <stop offset="100%" stop-color="#F0FAF5"/>
-        </linearGradient>
-      </defs>
-      <rect width="420" height="130" fill="url(#sky)"/>
-      <!-- Stadshuset (City Hall) with tower + crown -->
-      <g fill="rgba(29,158,117,0.22)">
-        <rect x="20" y="62" width="38" height="68"/>
-        <rect x="32" y="42" width="14" height="22"/>
-        <rect x="36" y="24" width="6" height="20"/>
-        <polygon points="39,14 34,25 44,25"/>
-        <!-- Cluster left -->
-        <rect x="68" y="72" width="20" height="58"/>
-        <rect x="92" y="65" width="24" height="65"/>
-        <rect x="120" y="75" width="17" height="55"/>
-        <!-- Church spire centre-left -->
-        <rect x="145" y="55" width="22" height="75"/>
-        <polygon points="156,35 144,57 168,57"/>
-        <rect x="154" y="26" width="4" height="10"/>
-        <!-- Mid buildings -->
-        <rect x="175" y="68" width="19" height="62"/>
-        <rect x="200" y="58" width="28" height="72"/>
-        <rect x="234" y="70" width="20" height="60"/>
-        <!-- Riddarholmen spire -->
-        <rect x="260" y="48" width="18" height="82"/>
-        <polygon points="269,28 259,50 279,50"/>
-        <rect x="267" y="18" width="4" height="12"/>
-        <!-- Right cluster -->
-        <rect x="286" y="65" width="22" height="65"/>
-        <rect x="314" y="72" width="18" height="58"/>
-        <rect x="338" y="62" width="24" height="68"/>
-        <rect x="368" y="70" width="20" height="60"/>
-        <rect x="394" y="76" width="16" height="54"/>
-      </g>
-      <!-- Water reflection -->
-      <ellipse cx="210" cy="136" rx="230" ry="20" fill="rgba(29,158,117,0.07)"/>
-    </svg>
-  </div>
+  <div class="content">
+    <div class="wordmark">Sthlm<span>Fit</span></div>
+    <h1 class="dark-headline">Välkommen tillbaka</h1>
 
-  <div class="onboard-card">
+    <div class="card">
+      <div class="alert alert-error" id="err"></div>
 
-    <div class="onboard-logo">Sthlm<span>Fit</span></div>
-    <p class="onboard-tagline">Träna för din stadsdel. Varje poäng räknas.</p>
-
-    <div class="onboard-progress" id="progress-bar" style="visibility:hidden">
-      <div class="onboard-progress-fill" id="progress-fill" style="width:25%"></div>
-    </div>
-
-    <!-- ── Step 1: Login / Signup ──────────────────────────────────────── -->
-    <div id="step-1">
-      <div class="mode-toggle">
-        <button class="mode-btn active" id="mode-login-btn">Logga in</button>
-        <button class="mode-btn" id="mode-signup-btn">Skapa konto</button>
-      </div>
-
-      <!-- Login form -->
       <div id="login-form">
-        <div class="alert alert-error" id="login-error"></div>
         <div class="field">
-          <label class="field-label" for="login-email">E-post</label>
-          <input class="input" type="email" id="login-email" placeholder="din@email.se" autocomplete="email" />
+          <label class="field-label">E-post</label>
+          <input type="email" class="input" id="email" placeholder="din@email.se" autocomplete="email" />
         </div>
-        <div class="field">
-          <label class="field-label" for="login-pw">Lösenord</label>
-          <input class="input" type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password" />
+        <div class="field" style="margin-bottom:6px">
+          <label class="field-label">Lösenord</label>
+          <input type="password" class="input" id="password" placeholder="••••••••" autocomplete="current-password" />
         </div>
-        <span class="forgot-link" id="forgot-link">Glömt lösenord?</span>
-
-        <!-- Forgot password panel -->
-        <div class="forgot-wrap" id="forgot-wrap">
-          <div class="alert alert-success" id="forgot-ok"></div>
-          <div class="alert alert-error" id="forgot-error"></div>
-          <p style="font-size:13px;color:var(--text-sub);margin-bottom:10px;line-height:1.5">
-            Ange din e-post så skickar vi en återställningslänk.
-          </p>
-          <div class="field" style="margin-bottom:10px">
-            <input class="input" type="email" id="forgot-email" placeholder="din@email.se" autocomplete="email" />
-          </div>
-          <button class="btn btn-primary btn-full btn-sm" id="forgot-btn">Skicka länk</button>
-        </div>
-
-        <div style="height:14px"></div>
-        <button class="btn btn-primary btn-full" id="login-btn">Logga in</button>
+        <button class="link-muted" id="forgot-toggle" style="display:block;text-align:right;margin-bottom:18px">Glömt lösenord?</button>
+        <button class="btn btn-primary" id="login-btn">Logga in</button>
       </div>
 
-      <!-- Signup form -->
+      <div id="forgot-panel" style="display:none">
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px">Återställ lösenord</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Vi skickar en länk till din e-post.</div>
+        <div class="field"><input type="email" class="input" id="reset-email" placeholder="din@email.se" /></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" id="reset-btn" style="flex:1">Skicka länk</button>
+          <button class="btn btn-outline" id="forgot-back" style="width:auto;padding:14px 18px;flex-shrink:0">Tillbaka</button>
+        </div>
+        <div class="alert alert-success" id="reset-ok" style="margin-top:12px"></div>
+      </div>
+
       <div id="signup-form" style="display:none">
-        <div class="alert alert-error" id="signup-error"></div>
-        <div class="alert alert-success" id="signup-confirm"></div>
+        <div style="font-size:17px;font-weight:800;margin-bottom:16px">Skapa konto</div>
         <div class="field">
-          <label class="field-label" for="su-name">Ditt namn</label>
-          <input class="input" type="text" id="su-name" placeholder="Förnamn Efternamn" autocomplete="name" />
+          <label class="field-label">E-post</label>
+          <input type="email" class="input" id="su-email" placeholder="din@email.se" />
         </div>
-        <div class="field">
-          <label class="field-label" for="su-email">E-post</label>
-          <input class="input" type="email" id="su-email" placeholder="din@email.se" autocomplete="email" />
+        <div class="field" style="margin-bottom:18px">
+          <label class="field-label">Lösenord</label>
+          <input type="password" class="input" id="su-password" placeholder="Minst 6 tecken" />
         </div>
-        <div class="field">
-          <label class="field-label" for="su-pw">Lösenord</label>
-          <input class="input" type="password" id="su-pw" placeholder="Minst 6 tecken" autocomplete="new-password" />
-        </div>
-        <button class="btn btn-primary btn-full" id="signup-btn">Skapa konto</button>
+        <button class="btn btn-primary" id="signup-btn">Skapa konto</button>
       </div>
     </div>
 
-    <!-- ── Step 2: Neighbourhood ───────────────────────────────────────── -->
-    <div id="step-2" style="display:none">
-      <div class="onboard-step-label">Steg 2 av 4</div>
-      <div class="onboard-heading">Välj din stadsdel</div>
-      <div class="alert alert-error" id="step2-error"></div>
-      <div class="nh-grid" id="nh-grid"></div>
-      <div style="height:16px"></div>
-      <button class="btn btn-primary btn-full" id="step2-btn" disabled>Nästa →</button>
+    <div style="text-align:center;margin-top:20px">
+      <button class="link-btn" id="toggle-mode">Inget konto? Skapa ett</button>
     </div>
-
-    <!-- ── Step 3: Goal type ───────────────────────────────────────────── -->
-    <div id="step-3" style="display:none">
-      <div class="onboard-step-label">Steg 3 av 4</div>
-      <div class="onboard-heading">Vad är ditt mål?</div>
-      <div class="alert alert-error" id="step3-error"></div>
-      <div class="goal-type-grid">
-        <button class="goal-type-btn" data-goal="train_more">
-          <span class="gt-icon"><i class="ti ti-barbell"></i></span>
-          <span class="gt-text">
-            <span class="gt-name">Träna mer</span>
-            <span class="gt-sub">Sätt ett veckomål för träningspass</span>
-          </span>
-        </button>
-        <button class="goal-type-btn" data-goal="run_more">
-          <span class="gt-icon"><i class="ti ti-run"></i></span>
-          <span class="gt-text">
-            <span class="gt-name">Spring mer</span>
-            <span class="gt-sub">Sätt ett veckomål för löpminuter</span>
-          </span>
-        </button>
-        <button class="goal-type-btn" data-goal="lose_weight">
-          <span class="gt-icon"><i class="ti ti-scale"></i></span>
-          <span class="gt-text">
-            <span class="gt-name">Gå ner i vikt</span>
-            <span class="gt-sub">Spåra kalorier och sätt viktmål</span>
-          </span>
-        </button>
-        <button class="goal-type-btn" data-goal="gain_muscle">
-          <span class="gt-icon"><i class="ti ti-building-stadium"></i></span>
-          <span class="gt-text">
-            <span class="gt-name">Bygg muskler</span>
-            <span class="gt-sub">Gympass och styrketräning ger poäng</span>
-          </span>
-        </button>
-      </div>
-      <div style="height:10px"></div>
-      <button class="btn btn-primary btn-full" id="step3-btn" disabled>Nästa →</button>
-    </div>
-
-    <!-- ── Step 4: Goal value ──────────────────────────────────────────── -->
-    <div id="step-4" style="display:none">
-      <div class="onboard-step-label">Steg 4 av 4</div>
-      <div class="onboard-heading" id="step4-heading">Sätt ditt mål</div>
-      <div class="alert alert-error" id="step4-error"></div>
-      <div class="field" id="goal-value-field">
-        <label class="field-label" id="goal-value-label">Värde</label>
-        <input class="input" type="number" id="goal-value-input" min="1" />
-      </div>
-      <div id="weight-wrap" style="display:none">
-        <div class="field-row">
-          <div class="field">
-            <label class="field-label" for="current-weight">Nuv. vikt (kg)</label>
-            <input class="input" type="number" id="current-weight" placeholder="80" min="30" max="300" step="0.1" />
-          </div>
-          <div class="field">
-            <label class="field-label" for="goal-weight">Målvikt (kg)</label>
-            <input class="input" type="number" id="goal-weight" placeholder="72" min="30" max="300" step="0.1" />
-          </div>
-        </div>
-      </div>
-      <button class="btn btn-primary btn-full" id="start-btn">
-        <i class="ti ti-rocket"></i> Sätt igång!
-      </button>
-    </div>
-
   </div>
 </div>
 
@@ -201,187 +91,71 @@
 <script src="app.js"></script>
 <script>
 (async () => {
-  const { data: { session: existing } } = await sb.auth.getSession();
-  if (existing) { window.location.href = 'index.html'; return; }
-
-  const GOAL_CONFIG = {
-    train_more:   { label: 'Antal pass per vecka?',       min: 1,   max: 7,    default: 4,    heading: 'Hur ofta vill du träna?' },
-    run_more:     { label: 'Minuters löpning per vecka?', min: 10,  max: 9999, default: 120,  heading: 'Hur mycket vill du springa?' },
-    lose_weight:  { label: 'Dagligt kalorigål (kcal)?',   min: 800, max: 9999, default: 1800, heading: 'Sätt kalorigål och vikt' },
-    gain_muscle:  { label: 'Gympass per vecka?',          min: 1,   max: 7,    default: 3,    heading: 'Hur ofta vill du gymma?' },
-  };
-
-  let currentUser = null, selectedNhId = null, selectedGoal = null, signupName = '';
-
-  function setProgress(pct) {
-    const bar = document.getElementById('progress-bar');
-    bar.style.visibility = pct > 0 ? 'visible' : 'hidden';
-    document.getElementById('progress-fill').style.width = pct + '%';
-  }
-  function showStep(n) {
-    [1,2,3,4].forEach(i => {
-      document.getElementById('step-' + i).style.display = i === n ? 'block' : 'none';
-    });
-    setProgress({ 1: 0, 2: 25, 3: 50, 4: 75 }[n] || 0);
-  }
-  function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.classList.add('show'); }
-  function hideError(id) { document.getElementById(id).classList.remove('show'); }
-  function setLoading(btn, on, label) { btn.disabled = on; btn.textContent = on ? label + '…' : label; }
-
-  // ── Forgot password ──
-  document.getElementById('forgot-link').addEventListener('click', () => {
-    const wrap = document.getElementById('forgot-wrap');
-    wrap.classList.toggle('open');
-    if (wrap.classList.contains('open')) {
-      document.getElementById('forgot-email').value = document.getElementById('login-email').value;
-    }
-  });
-  document.getElementById('forgot-btn').addEventListener('click', async () => {
-    const email = document.getElementById('forgot-email').value.trim();
-    hideError('forgot-error'); document.getElementById('forgot-ok').classList.remove('show');
-    if (!email) { showError('forgot-error', 'Ange din e-postadress.'); return; }
-    const btn = document.getElementById('forgot-btn');
-    setLoading(btn, true, 'Skickar');
-    const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/index.html',
-    });
-    setLoading(btn, false, 'Skicka länk');
-    if (error) { showError('forgot-error', error.message); }
-    else {
-      const ok = document.getElementById('forgot-ok');
-      ok.textContent = 'Kolla din e-post — en återställningslänk är på väg!';
-      ok.classList.add('show');
-    }
-  });
-
-  // ── Mode toggle ──
-  function switchMode(mode) {
-    const isLogin = mode === 'login';
-    document.getElementById('login-form').style.display  = isLogin ? 'block' : 'none';
-    document.getElementById('signup-form').style.display = isLogin ? 'none'  : 'block';
-    document.getElementById('mode-login-btn').classList.toggle('active',  isLogin);
-    document.getElementById('mode-signup-btn').classList.toggle('active', !isLogin);
-    ['login-error','signup-error','signup-confirm'].forEach(hideError);
-    if (!isLogin) document.getElementById('forgot-wrap').classList.remove('open');
-  }
-  document.getElementById('mode-login-btn').addEventListener('click', () => switchMode('login'));
-  document.getElementById('mode-signup-btn').addEventListener('click', () => switchMode('signup'));
-
-  // ── Login ──
-  async function doLogin() {
-    const email = document.getElementById('login-email').value.trim();
-    const pw    = document.getElementById('login-pw').value;
-    hideError('login-error');
-    if (!email) { showError('login-error', 'Ange din e-postadress.'); return; }
-    if (!pw)    { showError('login-error', 'Ange ditt lösenord.'); return; }
-    const btn = document.getElementById('login-btn');
-    setLoading(btn, true, 'Loggar in');
-    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
-    if (error) {
-      showError('login-error', error.message === 'Invalid login credentials' ? 'Fel e-post eller lösenord.' : error.message);
-      setLoading(btn, false, 'Logga in');
-    } else { window.location.href = 'index.html'; }
-  }
-  document.getElementById('login-btn').addEventListener('click', doLogin);
-  document.getElementById('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-  document.getElementById('login-pw').addEventListener('keydown',    e => { if (e.key === 'Enter') doLogin(); });
-
-  // ── Signup ──
-  document.getElementById('signup-btn').addEventListener('click', async () => {
-    const name  = document.getElementById('su-name').value.trim();
-    const email = document.getElementById('su-email').value.trim();
-    const pw    = document.getElementById('su-pw').value;
-    hideError('signup-error');
-    if (!name)         { showError('signup-error', 'Ange ditt namn.'); return; }
-    if (!email)        { showError('signup-error', 'Ange en e-postadress.'); return; }
-    if (pw.length < 6) { showError('signup-error', 'Lösenordet måste vara minst 6 tecken.'); return; }
-    const btn = document.getElementById('signup-btn');
-    setLoading(btn, true, 'Skapar konto');
-    const { data, error } = await sb.auth.signUp({ email, password: pw });
-    setLoading(btn, false, 'Skapa konto');
-    if (error) { showError('signup-error', error.message); return; }
-    signupName = name;
-    if (data.session) { currentUser = data.user; showStep(2); }
-    else {
-      const el = document.getElementById('signup-confirm');
-      el.textContent = 'Kolla din e-post för en bekräftelselänk!';
-      el.classList.add('show');
-    }
-  });
-
-  // ── Step 2: Neighbourhood ──
-  const nhGrid = document.getElementById('nh-grid');
-  NEIGHBOURHOODS.forEach(nh => {
-    const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'nh-option'; btn.dataset.id = nh.id;
-    btn.innerHTML = `<span class="nh-color-dot" style="background:${nh.color}"></span>${nh.name}`;
-    btn.addEventListener('click', () => {
-      selectedNhId = nh.id;
-      nhGrid.querySelectorAll('.nh-option').forEach(b => b.classList.toggle('selected', Number(b.dataset.id) === nh.id));
-      document.getElementById('step2-btn').disabled = false;
-      hideError('step2-error');
-    });
-    nhGrid.appendChild(btn);
-  });
-  document.getElementById('step2-btn').addEventListener('click', () => {
-    if (!selectedNhId) { showError('step2-error', 'Välj en stadsdel.'); return; }
-    showStep(3);
-  });
-
-  // ── Step 3: Goal type ──
-  document.querySelectorAll('.goal-type-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedGoal = btn.dataset.goal;
-      document.querySelectorAll('.goal-type-btn').forEach(b => b.classList.toggle('selected', b === btn));
-      document.getElementById('step3-btn').disabled = false;
-      hideError('step3-error');
-    });
-  });
-  document.getElementById('step3-btn').addEventListener('click', () => {
-    if (!selectedGoal) { showError('step3-error', 'Välj ett mål.'); return; }
-    const cfg = GOAL_CONFIG[selectedGoal];
-    document.getElementById('step4-heading').textContent = cfg.heading;
-    document.getElementById('goal-value-label').textContent = cfg.label;
-    const inp = document.getElementById('goal-value-input');
-    inp.value = cfg.default; inp.min = cfg.min; inp.max = cfg.max;
-    document.getElementById('weight-wrap').style.display = selectedGoal === 'lose_weight' ? 'block' : 'none';
-    showStep(4);
-  });
-
-  // ── Step 4: Save ──
-  document.getElementById('start-btn').addEventListener('click', async () => {
-    hideError('step4-error');
-    const goalValue = parseFloat(document.getElementById('goal-value-input').value);
-    if (!goalValue || goalValue <= 0) { showError('step4-error', 'Ange ett giltigt värde.'); return; }
-    if (!currentUser) {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session) { currentUser = session.user; }
-      else { showError('step4-error', 'Sessionen gick ut.'); showStep(1); return; }
-    }
-    const payload = {
-      id: currentUser.id,
-      username: signupName || currentUser.email.split('@')[0],
-      neighbourhood_id: selectedNhId,
-      goal_type: selectedGoal,
-      goal_value: goalValue,
-    };
-    if (selectedGoal === 'lose_weight') {
-      const cw = parseFloat(document.getElementById('current-weight').value);
-      const gw = parseFloat(document.getElementById('goal-weight').value);
-      if (cw > 0) payload.current_weight = cw;
-      if (gw > 0) payload.goal_weight = gw;
-    }
-    const btn = document.getElementById('start-btn');
-    btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Sparar…';
-    const { error } = await sb.from('profiles').upsert(payload);
-    if (error) {
-      showError('step4-error', 'Kunde inte spara: ' + error.message);
-      btn.disabled = false; btn.innerHTML = '<i class="ti ti-rocket"></i> Sätt igång!';
-    } else { window.location.href = 'index.html'; }
-  });
-
-  showStep(1);
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { const p = await getProfile(session.user.id); location.href = p ? 'log.html' : 'onboarding.html'; }
 })();
+
+const errEl = document.getElementById('err');
+function showErr(msg) { errEl.textContent = msg; errEl.className = 'alert alert-error show'; }
+function clearErr()   { errEl.className = 'alert alert-error'; }
+
+async function doLogin() {
+  clearErr();
+  const email = document.getElementById('email').value.trim();
+  const pw    = document.getElementById('password').value;
+  if (!email || !pw) { showErr('Fyll i e-post och lösenord.'); return; }
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Loggar in…';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if (error) { showErr(error.message); btn.disabled = false; btn.textContent = 'Logga in'; return; }
+  const profile = await getProfile(data.user.id);
+  location.href = profile ? 'log.html' : 'onboarding.html';
+}
+document.getElementById('login-btn').addEventListener('click', doLogin);
+['email','password'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); }));
+
+document.getElementById('forgot-toggle').addEventListener('click', () => {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('forgot-panel').style.display = 'block';
+  clearErr();
+});
+document.getElementById('forgot-back').addEventListener('click', () => {
+  document.getElementById('forgot-panel').style.display = 'none';
+  document.getElementById('login-form').style.display = 'block';
+});
+document.getElementById('reset-btn').addEventListener('click', async () => {
+  const email = document.getElementById('reset-email').value.trim();
+  if (!email) return;
+  const btn = document.getElementById('reset-btn');
+  btn.disabled = true; btn.textContent = 'Skickar…';
+  await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/dashboard.html' });
+  const ok = document.getElementById('reset-ok');
+  ok.textContent = 'Länk skickad! Kolla din inkorg.'; ok.className = 'alert alert-success show';
+  btn.textContent = 'Skickat';
+});
+
+let signupMode = false;
+document.getElementById('toggle-mode').addEventListener('click', () => {
+  signupMode = !signupMode;
+  document.getElementById('login-form').style.display  = signupMode ? 'none'  : 'block';
+  document.getElementById('signup-form').style.display = signupMode ? 'block' : 'none';
+  document.getElementById('forgot-panel').style.display = 'none';
+  document.getElementById('toggle-mode').textContent = signupMode ? 'Har konto? Logga in' : 'Inget konto? Skapa ett';
+  clearErr();
+});
+
+document.getElementById('signup-btn').addEventListener('click', async () => {
+  clearErr();
+  const email = document.getElementById('su-email').value.trim();
+  const pw    = document.getElementById('su-password').value;
+  if (!email || !pw) { showErr('Fyll i alla fält.'); return; }
+  if (pw.length < 6) { showErr('Lösenordet måste vara minst 6 tecken.'); return; }
+  const btn = document.getElementById('signup-btn');
+  btn.disabled = true; btn.textContent = 'Skapar konto…';
+  const { error } = await sb.auth.signUp({ email, password: pw });
+  if (error) { showErr(error.message); btn.disabled = false; btn.textContent = 'Skapa konto'; return; }
+  location.href = 'onboarding.html';
+});
 </script>
 </body>
 </html>
