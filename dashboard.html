@@ -63,6 +63,10 @@
 
   <div class="map-bottom-card" id="bottom-card" style="display:none">
     <div class="card-handle"></div>
+    <div class="attack-banner" id="attack-banner" onclick="location.href='leaderboard.html'">
+      <i class="ti ti-alert-triangle"></i>
+      <span id="attack-text"></span>
+    </div>
     <div class="map-stat-grid" id="stat-grid"></div>
     <div id="card-footer" style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)"></div>
   </div>
@@ -156,6 +160,12 @@ function kmOpacity(km) {
   const myNhColor = profile.neighbourhoods?.color || '#1D9E75';
   const myNhName  = profile.neighbourhoods?.name  || '–';
 
+  // Apply neighbourhood theme
+  const _c = myNhColor.replace('#','');
+  document.body.style.setProperty('--hood-color', myNhColor);
+  document.body.style.setProperty('--hood-rgb',
+    `${parseInt(_c.slice(0,2),16)},${parseInt(_c.slice(2,4),16)},${parseInt(_c.slice(4,6),16)}`);
+
   if (profile.strava_connected) sb.functions.invoke('strava-sync').catch(() => {});
 
   const weekStart = (() => {
@@ -231,14 +241,40 @@ function kmOpacity(km) {
         <div class="map-stat-label">Din stadsdel</div>
       </div>
       <div style="text-align:center">
-        <div style="font-size:48px;font-weight:900;line-height:1;letter-spacing:-3px;color:${isLeading?'var(--gold)':'#fff'}">#${myRank||'–'}</div>
+        <div style="font-size:48px;font-weight:900;line-height:1;letter-spacing:-3px;color:var(--hood-color)">#${myRank||'–'}</div>
         <div class="map-stat-label">Din rank</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:24px;font-weight:800;color:var(--green);line-height:1.1">${myKm.toFixed(1).replace('.',',')} km</div>
+        <div style="font-size:24px;font-weight:800;color:var(--hood-color);line-height:1.1">${myKm.toFixed(1).replace('.',',')} km</div>
         <div class="map-stat-label">Denna vecka</div>
       </div>
     `;
+
+    // Attack warning banner
+    const banner   = document.getElementById('attack-banner');
+    const myNhKm   = Number(myRow?.total_km || 0);
+    let attackMsg  = null;
+    if (myNhKm > 0) {
+      if (isLeading) {
+        const rival = entries[1];
+        if (rival) {
+          const gap = myNhKm - Number(rival.total_km || 0);
+          if (gap <= 15) attackMsg = `${rival.name} är bara ${gap.toFixed(1).replace('.',',')} km bakom — spring nu!`;
+        }
+      } else {
+        const leader = entries[0];
+        if (leader) {
+          const gap = Number(leader.total_km || 0) - myNhKm;
+          if (gap <= 15) attackMsg = `Du är ${gap.toFixed(1).replace('.',',')} km från att ta #1 — spring nu!`;
+        }
+      }
+    }
+    if (attackMsg) {
+      document.getElementById('attack-text').textContent = attackMsg;
+      banner.classList.add('visible');
+    } else {
+      banner.classList.remove('visible');
+    }
 
     document.getElementById('card-footer').innerHTML = profile.strava_connected
       ? `<div style="display:flex;align-items:center;gap:7px">
@@ -247,7 +283,7 @@ function kmOpacity(km) {
          </div>`
       : `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
            <span style="font-size:12px;color:rgba(255,255,255,0.45);font-weight:500">Ingen Strava-koppling</span>
-           <a href="log.html" style="font-size:13px;font-weight:700;color:var(--green);text-decoration:none">
+           <a href="log.html" style="font-size:13px;font-weight:700;color:var(--hood-color);text-decoration:none">
              Logga km manuellt →
            </a>
          </div>`;

@@ -34,7 +34,12 @@
   const profile = await getProfile(user.id);
   if (!profile) { location.href = 'onboarding.html'; return; }
 
-  const myNhId = profile.neighbourhood_id;
+  const myNhId    = profile.neighbourhood_id;
+  const myNhColor = profile.neighbourhoods?.color || '#1D9E75';
+  const _c = myNhColor.replace('#','');
+  document.body.style.setProperty('--hood-color', myNhColor);
+  document.body.style.setProperty('--hood-rgb',
+    `${parseInt(_c.slice(0,2),16)},${parseInt(_c.slice(2,4),16)},${parseInt(_c.slice(4,6),16)}`);
 
   async function render() {
     const { data: rows } = await sb.from('weekly_km').select('*');

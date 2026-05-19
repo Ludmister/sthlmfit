@@ -40,6 +40,12 @@
   const nhColor = profile.neighbourhoods?.color || '#1D9E75';
   const nhName  = profile.neighbourhoods?.name  || '–';
 
+  // Apply neighbourhood theme
+  const _c = nhColor.replace('#','');
+  document.body.style.setProperty('--hood-color', nhColor);
+  document.body.style.setProperty('--hood-rgb',
+    `${parseInt(_c.slice(0,2),16)},${parseInt(_c.slice(2,4),16)},${parseInt(_c.slice(4,6),16)}`);
+
   const weekStart = (() => {
     const d = new Date(); const day = d.getDay();
     d.setDate(d.getDate() - (day===0?6:day-1));
