@@ -5,6 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SthlmFit – Tavla</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background: #0D1B2A; }
+    .screen {
+      background: #0D1B2A;
+      background-image:
+        radial-gradient(ellipse 90% 30% at 50% 115%, transparent 94.5%, rgba(255,255,255,0.045) 95.5%, transparent 96.5%),
+        radial-gradient(ellipse 73% 24% at 50% 115%, transparent 94.5%, rgba(255,255,255,0.045) 95.5%, transparent 96.5%),
+        radial-gradient(ellipse 57% 19% at 50% 115%, transparent 94.5%, rgba(255,255,255,0.045) 95.5%, transparent 96.5%),
+        radial-gradient(ellipse 41% 14% at 50% 115%, transparent 94.5%, rgba(255,255,255,0.045) 95.5%, transparent 96.5%);
+    }
+    .section-head { color: #fff; }
+    .card { background: #1A2E42 !important; box-shadow: none !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+    .lb-name { color: rgba(255,255,255,0.9) !important; }
+    .lb-km { color: rgba(255,255,255,0.85) !important; }
+    .lb-behind { color: rgba(255,255,255,0.35) !important; }
+    .lb-rank { color: rgba(255,255,255,0.35) !important; }
+    .lb-bar-track { background: rgba(255,255,255,0.08) !important; }
+    .lb-row { border-bottom-color: rgba(255,255,255,0.06) !important; }
+    .lb-row.mine { background: rgba(var(--hood-rgb),0.12) !important; }
+    .countdown-row { border-top-color: rgba(255,255,255,0.06) !important; }
+    .countdown-text { color: rgba(255,255,255,0.4) !important; }
+    .countdown-val { color: rgba(255,255,255,0.75) !important; }
+    .empty-state .empty-title { color: rgba(255,255,255,0.8) !important; }
+    .empty-state .empty-sub { color: rgba(255,255,255,0.4) !important; }
+    .empty-icon { color: rgba(255,255,255,0.25) !important; }
+    .spinner { border-color: rgba(255,255,255,0.08); border-top-color: var(--hood-color); }
+  </style>
 </head>
 <body>
 <div class="screen">
@@ -103,8 +130,8 @@
         ${!profile.strava_connected ? `
         <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <div>
-            <div style="font-size:14px;font-weight:700;color:var(--text)">Logga löpning</div>
-            <div style="font-size:12px;color:var(--text-muted);font-weight:500;margin-top:2px">Manuell loggning</div>
+            <div style="font-size:14px;font-weight:700;color:#fff">Logga löpning</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.45);font-weight:500;margin-top:2px">Manuell loggning</div>
           </div>
           <a href="log.html" class="btn btn-primary btn-sm" style="text-decoration:none;flex-shrink:0">
             <i class="ti ti-plus"></i> Logga km

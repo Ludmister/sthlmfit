@@ -5,6 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SthlmFit – Profil</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background: #0D1B2A; }
+    .screen { background: #0D1B2A; }
+    .page-padded { background: #0D1B2A; }
+    .stat-box { background: #1A2E42 !important; box-shadow: none !important; border: 1px solid rgba(255,255,255,0.06); }
+    .stat-val { color: #fff !important; }
+    .stat-val.green { color: var(--hood-color) !important; }
+    .stat-val.gold  { color: var(--gold) !important; }
+    .stat-lbl { color: rgba(255,255,255,0.4) !important; }
+    .card { background: #1A2E42 !important; box-shadow: none !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+    .field-label { color: rgba(255,255,255,0.5) !important; }
+    .input { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.1) !important; color: #fff !important; }
+    .input:focus { border-color: var(--hood-color) !important; background: rgba(255,255,255,0.10) !important; }
+    .input::placeholder { color: rgba(255,255,255,0.3) !important; }
+    .nh-card { background: rgba(255,255,255,0.04) !important; border-color: rgba(255,255,255,0.08) !important; }
+    .nh-name { color: rgba(255,255,255,0.7) !important; }
+    .nh-card.selected { background: rgba(var(--hood-rgb),0.18) !important; border-color: var(--hood-color) !important; }
+    .nh-card.selected .nh-name { color: var(--hood-color) !important; }
+    .bottom-nav { background: #111E2D !important; border-top-color: rgba(255,255,255,0.07) !important; }
+    .nav-tab { color: rgba(255,255,255,0.38) !important; }
+    .nav-tab.active { color: var(--hood-color) !important; }
+    .spinner { border-color: rgba(255,255,255,0.08); border-top-color: var(--hood-color); }
+  </style>
 </head>
 <body>
 <div class="screen">
@@ -81,7 +104,7 @@
 
       <!-- Avatar + name + neighbourhood -->
       <div style="display:flex;flex-direction:column;align-items:center;padding:28px 0 22px;gap:6px;position:relative;overflow:hidden;background:#0D1B2A;border-radius:16px;margin-bottom:12px">
-        <svg viewBox="0 0 400 120" width="100%" style="display:block;position:absolute;bottom:0;left:0;right:0;pointer-events:none" fill="#080F1A" stroke="${nhColor}" stroke-width="1.5" stroke-opacity="0.4" stroke-linejoin="round" stroke-linecap="round">${STOCKHOLM_SKYLINE}</svg>
+        <svg viewBox="0 0 400 120" width="100%" style="display:block;position:absolute;bottom:0;left:0;right:0;pointer-events:none;opacity:0.15" fill="#0D1B2A" stroke="${nhColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">${STOCKHOLM_SKYLINE}</svg>
         <div style="width:64px;height:64px;border-radius:50%;
              background:rgba(255,255,255,0.07);border:2.5px solid ${nhColor};
              display:flex;align-items:center;justify-content:center;
@@ -119,7 +142,7 @@
               <i class="ti ti-brand-strava" style="color:var(--strava);font-size:18px"></i>
               <span style="font-size:14px;font-weight:700;color:var(--green)">Strava kopplad</span>
             </div>
-            <button id="strava-disconnect-btn" style="font-size:13px;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:var(--font)">
+            <button id="strava-disconnect-btn" style="font-size:13px;color:rgba(255,255,255,0.45);background:none;border:none;cursor:pointer;font-family:var(--font)">
               Koppla från
             </button>
           </div>
@@ -145,9 +168,9 @@
       </div>
 
       <!-- Logout -->
-      <div style="text-align:center;padding:6px 0 12px">
-        <button id="logout-btn" style="font-size:14px;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:var(--font);font-weight:500">
-          Logga ut
+      <div style="margin-top:8px;padding-bottom:20px">
+        <button id="logout-btn" style="width:100%;padding:15px 20px;background:#991B1B;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;font-family:var(--font);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.15s">
+          <i class="ti ti-logout" style="font-size:20px"></i> Logga ut
         </button>
       </div>
 
