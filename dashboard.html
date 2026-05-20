@@ -36,6 +36,15 @@
       border-radius: 99px;
       margin: 0 auto 18px;
     }
+    @keyframes floatUp {
+      0%   { opacity:1; transform:translateX(-50%) translateY(0); }
+      100% { opacity:0; transform:translateX(-50%) translateY(-64px); }
+    }
+    @keyframes feedIn {
+      from { opacity:0; transform:translateY(5px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .feed-row { opacity:0; animation:feedIn 0.35s ease forwards; }
   </style>
 </head>
 <body>
@@ -60,6 +69,11 @@
     style="top:calc(16px + env(safe-area-inset-top)); right:16px">
     <i class="ti ti-trophy"></i>
   </button>
+
+  <!-- Personal greeting — fades out after 4s -->
+  <div id="greeting" style="position:fixed;top:calc(64px + env(safe-area-inset-top));left:12px;right:12px;z-index:90;pointer-events:none;opacity:0;transition:opacity 0.5s ease">
+    <div id="greeting-text" style="background:rgba(10,22,36,0.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:9px 16px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.9);text-align:center"></div>
+  </div>
 
   <div class="map-bottom-card" id="bottom-card" style="display:none">
     <div class="card-handle"></div>
@@ -92,6 +106,12 @@
       <i class="ti ti-brand-strava" style="color:var(--strava);font-size:16px"></i>
       <span style="font-size:13px;font-weight:600;color:var(--strava)">Strava kopplad</span>
     </div>
+
+    <!-- Activity feed -->
+    <div id="feed-wrap" style="display:none;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07)">
+      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">Senaste aktivitet</div>
+      <div id="feed-list"></div>
+    </div>
   </div>
 
 </div>
@@ -100,7 +120,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
 <script>
-let GEO = null; // loaded from neighbourhoods.geojson
+let GEO = null;
 
 function kmOpacity(km) {
   if (!km || km <= 0) return 0.30;
@@ -108,6 +128,48 @@ function kmOpacity(km) {
   if (km <= 40)       return 0.68;
   if (km <= 80)       return 0.84;
   return 0.95;
+}
+
+function playLogSound() {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(523, ctx.currentTime);
+    osc.frequency.setValueAtTime(659, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+}
+
+function floatKmUp(km, color) {
+  const el = document.createElement('div');
+  el.textContent = '+' + km.toFixed(1).replace('.', ',') + ' km';
+  el.style.cssText = 'position:fixed;bottom:240px;left:50%;font-size:40px;font-weight:900;letter-spacing:-1px;color:' + color + ';z-index:2000;pointer-events:none;font-family:var(--font);text-shadow:0 0 32px ' + color + '99;animation:floatUp 1.3s ease-out forwards';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1400);
+}
+
+function animateCounter(el, from, to, ms) {
+  const start = performance.now();
+  const diff = to - from;
+  (function step(now) {
+    const p = Math.min((now - start) / ms, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = (from + diff * eased).toFixed(1).replace('.', ',') + ' km';
+    if (p < 1) requestAnimationFrame(step);
+  })(start);
+}
+
+function timeAgo(ts) {
+  const m = Math.floor((Date.now() - new Date(ts)) / 60000);
+  if (m < 1)  return 'just nu';
+  if (m < 60) return m + ' min sedan';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h sedan';
+  return Math.floor(h / 24) + 'd sedan';
 }
 
 (async () => {
@@ -125,7 +187,6 @@ function kmOpacity(km) {
   const myNhColor = profile.neighbourhoods?.color || '#1D9E75';
   const myNhName  = profile.neighbourhoods?.name  || '–';
 
-  // Apply neighbourhood theme
   const _c = myNhColor.replace('#','');
   document.body.style.setProperty('--hood-color', myNhColor);
   document.body.style.setProperty('--hood-rgb',
@@ -181,6 +242,22 @@ function kmOpacity(km) {
     if (mine) mine.layer.setStyle({ color: pulse ? myNhColor : 'rgba(255,255,255,0.25)', weight: pulse ? 3.5 : 2 });
   }, 900);
 
+  function flashPolygon() {
+    const ref = layerMap[myNhId];
+    if (!ref) return;
+    const orig = ref.baseFillOpacity;
+    ref.layer.setStyle({ fillOpacity: 0.85, weight: 8 });
+    setTimeout(() => ref.layer.setStyle({ fillOpacity: 0.4,  weight: 5 }), 150);
+    setTimeout(() => ref.layer.setStyle({ fillOpacity: 0.85, weight: 8 }), 300);
+    setTimeout(() => ref.layer.setStyle({ fillOpacity: 0.4,  weight: 5 }), 450);
+    setTimeout(() => ref.layer.setStyle({ fillOpacity: 0.85, weight: 8 }), 600);
+    setTimeout(() => ref.layer.setStyle({ fillOpacity: orig,  weight: ref.isMine ? 3.5 : 1.5 }), 1000);
+  }
+
+  let lastMyKm     = null;
+  let latestLeading = false;
+  let greetingShown = false;
+
   async function updateData() {
     const [lbRes, myWoRes] = await Promise.all([
       sb.from('weekly_km').select('*'),
@@ -192,6 +269,7 @@ function kmOpacity(km) {
     const myRow     = entries.find(e => e.id === myNhId);
     const myRank    = entries.findIndex(e => e.id === myNhId) + 1;
     const isLeading = myRank === 1 && (myRow?.total_km || 0) > 0;
+    latestLeading   = isLeading;
 
     entries.forEach((e, i) => {
       const ref = layerMap[e.id];
@@ -218,15 +296,20 @@ function kmOpacity(km) {
         <div class="map-stat-label">Din rank</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:24px;font-weight:800;color:var(--hood-color);line-height:1.1">${myKm.toFixed(1).replace('.',',')} km</div>
+        <div id="dash-my-km" style="font-size:24px;font-weight:800;color:var(--hood-color);line-height:1.1">${myKm.toFixed(1).replace('.',',')} km</div>
         <div class="map-stat-label">Denna vecka</div>
       </div>
     `;
 
-    // Attack warning banner
-    const banner   = document.getElementById('attack-banner');
-    const myNhKm   = Number(myRow?.total_km || 0);
-    let attackMsg  = null;
+    if (lastMyKm !== null && myKm !== lastMyKm) {
+      const el = document.getElementById('dash-my-km');
+      if (el) animateCounter(el, lastMyKm, myKm, 800);
+    }
+    lastMyKm = myKm;
+
+    const banner  = document.getElementById('attack-banner');
+    const myNhKm  = Number(myRow?.total_km || 0);
+    let attackMsg = null;
     if (myNhKm > 0) {
       if (isLeading) {
         const rival = entries[1];
@@ -261,7 +344,66 @@ function kmOpacity(km) {
     document.getElementById('loading').classList.add('hidden');
   }
 
+  async function refreshFeed() {
+    const { data } = await sb
+      .from('workouts')
+      .select('km, created_at, profiles(neighbourhoods(name, color))')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const items = (data || []).filter(w => w.profiles?.neighbourhoods);
+
+    const PLACEHOLDERS = [
+      { nhName: 'Södermalm', color: '#378ADD', km: 4.2, ts: new Date(Date.now() - 480000) },
+      { nhName: 'Vasastan',  color: '#639922', km: 7.8, ts: new Date(Date.now() - 1920000) },
+      { nhName: 'Östermalm', color: '#BA7517', km: 3.1, ts: new Date(Date.now() - 3660000) },
+    ];
+
+    const rows = items.length > 0
+      ? items.map(w => ({ nhName: w.profiles.neighbourhoods.name, color: w.profiles.neighbourhoods.color, km: Number(w.km), ago: timeAgo(w.created_at) }))
+      : PLACEHOLDERS.map(p => ({ ...p, ago: timeAgo(p.ts) }));
+
+    const feedList = document.getElementById('feed-list');
+    const feedWrap = document.getElementById('feed-wrap');
+    if (!feedList) return;
+
+    feedList.innerHTML = rows.map((r, i) => `
+      <div class="feed-row" style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;animation-delay:${i * 0.07}s">
+        <div style="width:6px;height:6px;border-radius:50%;background:${r.color};flex-shrink:0;margin-top:4px"></div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.5">
+          Någon i <span style="color:${r.color};font-weight:700">${r.nhName}</span> loggade ${r.km.toFixed(1).replace('.',',')} km
+          <span style="color:rgba(255,255,255,0.28);margin-left:2px">${r.ago}</span>
+        </div>
+      </div>
+    `).join('');
+
+    feedWrap.style.display = 'block';
+  }
+
   await updateData();
+
+  // Personal greeting (shown once on load)
+  if (!greetingShown) {
+    greetingShown = true;
+    const hour = new Date().getHours();
+    const firstName = (profile.name || 'du').split(' ')[0];
+    let msg;
+    if (latestLeading) {
+      msg = 'Du leder Stockholm just nu 👑';
+    } else if (hour >= 6 && hour < 10) {
+      msg = `God morgon ${firstName} — ${myNhName} vaknar 🌅`;
+    } else if (lastMyKm > 0) {
+      msg = `Bra jobbat idag ${firstName} 💪`;
+    } else {
+      msg = `${myNhName} behöver dig — spring idag!`;
+    }
+    const greetEl = document.getElementById('greeting');
+    document.getElementById('greeting-text').textContent = msg;
+    greetEl.style.opacity = '1';
+    setTimeout(() => { greetEl.style.opacity = '0'; }, 4000);
+  }
+
+  await refreshFeed();
 
   document.getElementById('dash-log-btn').addEventListener('click', async () => {
     const kmInput = document.getElementById('dash-km');
@@ -294,11 +436,18 @@ function kmOpacity(km) {
     msgEl.style.color = '#6EE7B7';
     msgEl.textContent = `+${km.toFixed(1).replace('.',',')} km loggat!`;
     kmInput.value = '';
+    playLogSound();
+    floatKmUp(km, myNhColor);
+    flashPolygon();
     await updateData();
+    await refreshFeed();
   });
 
   sb.channel('dashboard-live')
-    .on('postgres_changes', { event:'INSERT', schema:'public', table:'workouts' }, () => updateData())
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'workouts' }, async () => {
+      await updateData();
+      await refreshFeed();
+    })
     .subscribe();
 
   document.getElementById('logout-pill').addEventListener('click', async () => {

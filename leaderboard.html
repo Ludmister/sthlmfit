@@ -31,6 +31,29 @@
     .empty-state .empty-sub { color: rgba(255,255,255,0.4) !important; }
     .empty-icon { color: rgba(255,255,255,0.25) !important; }
     .spinner { border-color: rgba(255,255,255,0.08); border-top-color: var(--hood-color); }
+    @keyframes goldShimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position:  200% center; }
+    }
+    @keyframes barFill {
+      from { width: 0; }
+      to   { width: var(--bw); }
+    }
+    @keyframes rowPulse {
+      0%, 100% { background: rgba(var(--hood-rgb),0.12) !important; }
+      50%       { background: rgba(var(--hood-rgb),0.26) !important; }
+    }
+    .lb-row.leader {
+      background: linear-gradient(90deg,
+        transparent 0%, rgba(251,191,36,0.05) 44%,
+        rgba(251,191,36,0.14) 50%,
+        rgba(251,191,36,0.05) 56%, transparent 100%
+      ) !important;
+      background-size: 200% 100% !important;
+      animation: goldShimmer 4s linear infinite !important;
+    }
+    .lb-row.mine.pulsing { animation: rowPulse 3s ease-in-out infinite !important; }
+    .lb-bar-anim { width: 0; animation: barFill 0.9s ease-out forwards; }
   </style>
 </head>
 <body>
@@ -75,12 +98,21 @@
   sil.innerHTML = `<svg viewBox="0 0 400 120" width="100%" style="display:block" fill="#080F1A" stroke="${myNhColor}" stroke-width="1.5" stroke-opacity="0.4" stroke-linejoin="round" stroke-linecap="round">${STOCKHOLM_SKYLINE}</svg>`;
   topbar.appendChild(sil);
 
+  // Rank delta tracking: compare to previous page-load snapshot
+  const storedRanks = JSON.parse(localStorage.getItem('sf_lb_ranks') || '{}');
+  let tickTimer = null;
+
   async function render() {
     const { data: rows } = await sb.from('weekly_km').select('*');
     const entries = rows || [];
     const leader  = entries[0];
     const maxKm   = Math.max(leader?.total_km || 0.1, 0.1);
     const allZero = entries.every(e => !e.total_km || e.total_km == 0);
+
+    // Save current ranks for next load's delta comparison
+    const newRanks = {};
+    entries.forEach((e, i) => { newRanks[e.id] = i + 1; });
+    localStorage.setItem('sf_lb_ranks', JSON.stringify(newRanks));
 
     const emptyMsg = allZero ? `
         <div class="empty-state">
@@ -90,27 +122,40 @@
         </div>` : '';
 
     const lbRows = emptyMsg + entries.map((e, i) => {
-        const pct    = Math.round((e.total_km / maxKm) * 100);
-        const isMine = e.id === myNhId;
-        const behind = i > 0 ? Number(leader.total_km) - Number(e.total_km) : 0;
-        const rankEl = i === 0 ? `<span class="lb-rank r1"><i class="ti ti-medal"></i></span>`
-                     : i === 1 ? `<span class="lb-rank r2"><i class="ti ti-medal"></i></span>`
-                     : i === 2 ? `<span class="lb-rank r3"><i class="ti ti-medal"></i></span>`
-                     : `<span class="lb-rank" style="font-size:13px;font-weight:700;color:var(--text-muted)">${i+1}</span>`;
-        return `
-          <div class="lb-row${isMine?' mine':''}${i===0&&e.total_km>0?' leader':''}">
-            ${rankEl}
-            <div class="lb-dot" style="background:${e.color}"></div>
-            <div class="lb-name-wrap">
-              <div class="lb-name">${e.name}${isMine?'<span class="lb-du">DU</span>':''}</div>
-              <div class="lb-bar-track">
-                <div class="lb-bar-fill" style="width:${pct}%;background:${e.color}"></div>
-              </div>
-              ${i>0&&e.total_km>0?`<div class="lb-behind">${behind.toFixed(1).replace('.',',')} km bakom</div>`:''}
+      const pct      = Math.round((e.total_km / maxKm) * 100);
+      const isMine   = e.id === myNhId;
+      const isLeader = i === 0 && e.total_km > 0;
+      const behind   = i > 0 ? Number(leader.total_km) - Number(e.total_km) : 0;
+
+      const prevRank = storedRanks[e.id];
+      const delta    = prevRank ? prevRank - (i + 1) : 0;
+      const arrowEl  = delta > 0
+        ? `<span style="font-size:10px;color:#4ADE80;margin-left:4px;font-weight:900">▲${delta}</span>`
+        : delta < 0
+        ? `<span style="font-size:10px;color:#F87171;margin-left:4px;font-weight:900">▼${Math.abs(delta)}</span>`
+        : '';
+
+      const rankEl = i === 0 ? `<span class="lb-rank r1"><i class="ti ti-medal"></i></span>`
+                   : i === 1 ? `<span class="lb-rank r2"><i class="ti ti-medal"></i></span>`
+                   : i === 2 ? `<span class="lb-rank r3"><i class="ti ti-medal"></i></span>`
+                   : `<span class="lb-rank" style="font-size:13px;font-weight:700;color:var(--text-muted)">${i+1}</span>`;
+
+      const rowClass = `lb-row${isMine ? ' mine' + (isLeader ? '' : ' pulsing') : ''}${isLeader ? ' leader' : ''}`;
+
+      return `
+        <div class="${rowClass}">
+          ${rankEl}
+          <div class="lb-dot" style="background:${e.color}"></div>
+          <div class="lb-name-wrap">
+            <div class="lb-name">${e.name}${isMine ? '<span class="lb-du">DU</span>' : ''}${arrowEl}</div>
+            <div class="lb-bar-track">
+              <div class="lb-bar-fill lb-bar-anim" style="--bw:${pct}%;background:${e.color};animation-delay:${i * 0.07}s"></div>
             </div>
-            <div class="lb-km">${Number(e.total_km).toFixed(1).replace('.',',')} km</div>
-          </div>`;
-      }).join('');
+            ${i > 0 && e.total_km > 0 ? `<div class="lb-behind">${behind.toFixed(1).replace('.',',')} km bakom</div>` : ''}
+          </div>
+          <div class="lb-km">${Number(e.total_km).toFixed(1).replace('.',',')} km</div>
+        </div>`;
+    }).join('');
 
     document.getElementById('content').innerHTML = `
       <div style="padding:14px 12px;display:flex;flex-direction:column;gap:10px">
@@ -120,9 +165,9 @@
         <div class="card" style="padding:0;overflow:hidden">
           <div class="lb-table">${lbRows}</div>
           <div class="countdown-row">
-            <div class="countdown-text">
+            <div class="countdown-text" style="justify-content:center">
               <div class="live-dot"></div>
-              Återställs om <span class="countdown-val" id="cd">…</span>
+              <span id="cd" style="font-size:12px;font-weight:600">…</span>
             </div>
           </div>
         </div>
@@ -141,8 +186,45 @@
       </div>
     `;
 
-    function tick() { const el = document.getElementById('cd'); if (el) el.textContent = getCountdown(); }
-    tick(); setInterval(tick, 1000);
+    // Dramatic countdown — context-aware message
+    const myRow    = entries.find(e => e.id === myNhId);
+    const myNhKm   = Number(myRow?.total_km || 0);
+    const leaderKm = Number(entries[0]?.total_km || 0);
+    const isLeading = entries[0]?.id === myNhId && myNhKm > 0;
+    const gap = isLeading ? 0 : leaderKm - myNhKm;
+
+    if (tickTimer) clearInterval(tickTimer);
+
+    function tick() {
+      const el = document.getElementById('cd');
+      if (!el) return;
+      const now = new Date();
+      const monday = new Date(now);
+      const day = monday.getDay();
+      monday.setDate(monday.getDate() + (day === 1 ? 7 : (8 - day) % 7));
+      monday.setHours(0, 0, 0, 0);
+      const diff = monday - now;
+      const h  = Math.floor(diff / 3600000);
+      const mi = Math.floor((diff % 3600000) / 60000);
+      const s  = Math.floor((diff % 60000) / 1000);
+      const d  = Math.floor(h / 24);
+      const hh = h % 24;
+      const timeStr = d >= 1 ? `${d}d ${hh}h` : `${h}h ${mi}m ${s}s`;
+
+      let label;
+      if (isLeading) {
+        label = `Du leder — ${timeStr} kvar att försvara`;
+      } else if (myNhKm > 0 && gap <= 20) {
+        label = `${gap.toFixed(1).replace('.',',')} km bakom — ${d >= 1 ? d + 'd' : h + 'h'} kvar!`;
+      } else {
+        label = `Spring nu — ${timeStr} kvar denna vecka`;
+      }
+
+      el.innerHTML = `<span style="color:${myNhColor}">${label}</span>`;
+    }
+
+    tick();
+    tickTimer = setInterval(tick, 1000);
   }
 
   await render();
