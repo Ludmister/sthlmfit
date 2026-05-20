@@ -57,14 +57,11 @@
       </div>
 
       <div id="forgot-panel" style="display:none">
-        <div style="font-size:15px;font-weight:700;margin-bottom:6px">Återställ lösenord</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Vi skickar en länk till din e-post.</div>
-        <div class="field"><input type="email" class="input" id="reset-email" placeholder="din@email.se" /></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-primary" id="reset-btn" style="flex:1">Skicka länk</button>
-          <button class="btn btn-outline" id="forgot-back" style="width:auto;padding:14px 18px;flex-shrink:0">Tillbaka</button>
+        <div style="font-size:15px;font-weight:700;margin-bottom:10px">Återställ lösenord</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:18px">
+          Kontakta oss på <a href="mailto:sthlmfit@gmail.com" style="color:var(--green);font-weight:600;text-decoration:none">sthlmfit@gmail.com</a> så hjälper vi dig återställa ditt lösenord.
         </div>
-        <div class="alert alert-success" id="reset-ok" style="margin-top:12px"></div>
+        <button class="btn btn-outline" id="forgot-back">Tillbaka</button>
       </div>
 
       <div id="signup-form" style="display:none">
@@ -131,16 +128,6 @@ document.getElementById('forgot-toggle').addEventListener('click', () => {
 document.getElementById('forgot-back').addEventListener('click', () => {
   document.getElementById('forgot-panel').style.display = 'none';
   document.getElementById('login-form').style.display = 'block';
-});
-document.getElementById('reset-btn').addEventListener('click', async () => {
-  const email = document.getElementById('reset-email').value.trim();
-  if (!email) return;
-  const btn = document.getElementById('reset-btn');
-  btn.disabled = true; btn.textContent = 'Skickar…';
-  await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/dashboard.html' });
-  const ok = document.getElementById('reset-ok');
-  ok.textContent = 'Länk skickad! Kolla din inkorg.'; ok.className = 'alert alert-success show';
-  btn.textContent = 'Skickat';
 });
 
 let signupMode = false;
