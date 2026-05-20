@@ -77,18 +77,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
 <script>
-const GEO = { type:'FeatureCollection', features:[
-  {type:'Feature',properties:{id:1},geometry:{type:'Polygon',coordinates:[[[18.0317,59.3163],[18.0514,59.3071],[18.0876,59.3072],[18.0989,59.3163],[18.0876,59.3251],[18.0514,59.3251],[18.0317,59.3163]]]}},
-  {type:'Feature',properties:{id:2},geometry:{type:'Polygon',coordinates:[[[18.0317,59.3401],[18.0514,59.3451],[18.0700,59.3451],[18.0700,59.3351],[18.0514,59.3301],[18.0317,59.3351],[18.0317,59.3401]]]}},
-  {type:'Feature',properties:{id:3},geometry:{type:'Polygon',coordinates:[[[18.0700,59.3401],[18.0989,59.3451],[18.1200,59.3401],[18.1200,59.3301],[18.0989,59.3251],[18.0700,59.3301],[18.0700,59.3401]]]}},
-  {type:'Feature',properties:{id:4},geometry:{type:'Polygon',coordinates:[[[17.9989,59.3301],[18.0317,59.3351],[18.0317,59.3201],[18.0100,59.3151],[17.9989,59.3201],[17.9989,59.3301]]]}},
-  {type:'Feature',properties:{id:5},geometry:{type:'Polygon',coordinates:[[[18.0614,59.3251],[18.0750,59.3201],[18.0750,59.3151],[18.0614,59.3101],[18.0514,59.3151],[18.0514,59.3201],[18.0614,59.3251]]]}},
-  {type:'Feature',properties:{id:6},geometry:{type:'Polygon',coordinates:[[[18.0317,59.3351],[18.0700,59.3401],[18.0700,59.3301],[18.0514,59.3251],[18.0317,59.3251],[18.0317,59.3351]]]}},
-  {type:'Feature',properties:{id:7},geometry:{type:'Polygon',coordinates:[[[18.0876,59.3072],[18.1100,59.3072],[18.1100,59.2972],[18.0876,59.2972],[18.0876,59.3072]]]}},
-  {type:'Feature',properties:{id:8},geometry:{type:'Polygon',coordinates:[[[17.9989,59.3151],[18.0317,59.3163],[18.0317,59.3001],[18.0100,59.2951],[17.9989,59.3001],[17.9989,59.3151]]]}},
-  {type:'Feature',properties:{id:9},geometry:{type:'Polygon',coordinates:[[[18.1200,59.3601],[18.1800,59.3601],[18.1800,59.3301],[18.1200,59.3301],[18.1200,59.3601]]]}},
-  {type:'Feature',properties:{id:10},geometry:{type:'Polygon',coordinates:[[[18.0989,59.3301],[18.1200,59.3401],[18.1600,59.3251],[18.1200,59.3151],[18.0989,59.3201],[18.0989,59.3301]]]}}
-]};
+let GEO = null; // loaded from neighbourhoods.geojson
 
 function kmOpacity(km) {
   if (!km || km <= 0) return 0.30;
@@ -99,8 +88,12 @@ function kmOpacity(km) {
 }
 
 (async () => {
-  const user = await requireAuth();
+  const [geoRes, user] = await Promise.all([
+    fetch('neighbourhoods.geojson').then(r => r.json()),
+    requireAuth(),
+  ]);
   if (!user) return;
+  GEO = geoRes;
 
   const profile = await getProfile(user.id);
   if (!profile) { location.href = 'onboarding.html'; return; }
@@ -125,7 +118,7 @@ function kmOpacity(km) {
 
   const map = L.map('map', {
     zoomControl: false, scrollWheelZoom: true, attributionControl: true,
-  }).setView([59.3293, 18.0686], 13);
+  }).setView([59.3293, 18.0686], 12);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CartoDB', maxZoom: 16,
@@ -140,23 +133,29 @@ function kmOpacity(km) {
     if (!nb) return;
     const isMine = nhId === myNhId;
     const layer = L.geoJSON(f, {
-      style: { fillColor: nb.color, fillOpacity: 0.30, color: nb.color, weight: isMine ? 2.5 : 1, opacity: isMine ? 1 : 0.75 }
+      style: {
+        fillColor:    nb.color,
+        fillOpacity:  isMine ? 0.22 : 0.10,
+        color:        nb.color,
+        weight:       isMine ? 3 : 1.5,
+        opacity:      isMine ? 1 : 0.65,
+      }
     }).addTo(map);
 
-    const layerRef = { layer, nb, isMine, currentOpacity: 0.30 };
+    const layerRef = { layer, nb, isMine, baseFillOpacity: isMine ? 0.22 : 0.10 };
     layerMap[nhId] = layerRef;
 
     layer.bindPopup('', { maxWidth:190 });
     layer.on('click', () => layer.openPopup());
-    layer.on('mouseover', () => !isMine && layer.setStyle({ fillOpacity: Math.min(layerRef.currentOpacity + 0.18, 1) }));
-    layer.on('mouseout',  () => !isMine && layer.setStyle({ fillOpacity: layerRef.currentOpacity }));
+    layer.on('mouseover', () => layer.setStyle({ fillOpacity: Math.min(layerRef.baseFillOpacity + 0.15, 0.5) }));
+    layer.on('mouseout',  () => layer.setStyle({ fillOpacity: layerRef.baseFillOpacity }));
   });
 
   let pulse = true;
   setInterval(() => {
     pulse = !pulse;
     const mine = layerMap[myNhId];
-    if (mine) mine.layer.setStyle({ color: pulse ? myNhColor : 'rgba(255,255,255,0.3)', weight: pulse ? 3 : 1.5 });
+    if (mine) mine.layer.setStyle({ color: pulse ? myNhColor : 'rgba(255,255,255,0.25)', weight: pulse ? 3.5 : 2 });
   }, 900);
 
   async function updateData() {
@@ -174,8 +173,10 @@ function kmOpacity(km) {
     entries.forEach((e, i) => {
       const ref = layerMap[e.id];
       if (!ref) return;
-      ref.currentOpacity = kmOpacity(e.total_km);
-      ref.layer.setStyle({ fillOpacity: ref.currentOpacity });
+      ref.baseFillOpacity = ref.isMine
+        ? Math.max(0.22, kmOpacity(e.total_km) * 0.4)
+        : kmOpacity(e.total_km) * 0.22;
+      ref.layer.setStyle({ fillOpacity: ref.baseFillOpacity });
       ref.layer.setPopupContent(`
         <div class="map-popup-name">${ref.nb.name}</div>
         <div class="map-popup-km">${Number(e.total_km).toFixed(1).replace('.',',')} km</div>
