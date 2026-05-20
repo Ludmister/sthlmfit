@@ -55,16 +55,14 @@
     const maxKm   = Math.max(leader?.total_km || 0.1, 0.1);
     const allZero = entries.every(e => !e.total_km || e.total_km == 0);
 
-    let lbRows;
-    if (allZero) {
-      lbRows = `
+    const emptyMsg = allZero ? `
         <div class="empty-state">
           <div class="empty-icon"><i class="ti ti-run"></i></div>
           <div class="empty-title">Ingen har sprungit ännu</div>
           <div class="empty-sub">Bli först för din stadsdel denna vecka!</div>
-        </div>`;
-    } else {
-      lbRows = entries.map((e, i) => {
+        </div>` : '';
+
+    const lbRows = emptyMsg + entries.map((e, i) => {
         const pct    = Math.round((e.total_km / maxKm) * 100);
         const isMine = e.id === myNhId;
         const behind = i > 0 ? Number(leader.total_km) - Number(e.total_km) : 0;
@@ -86,7 +84,6 @@
             <div class="lb-km">${Number(e.total_km).toFixed(1).replace('.',',')} km</div>
           </div>`;
       }).join('');
-    }
 
     document.getElementById('content').innerHTML = `
       <div style="padding:14px 12px;display:flex;flex-direction:column;gap:10px">
