@@ -58,7 +58,7 @@
   const user    = await requireAuth();
   if (!user) return;
   const profile = await getProfile(user.id);
-  if (!profile) { location.href = 'onboarding.html'; return; }
+  if (!profile?.neighbourhood_id) { location.href = 'onboarding.html'; return; }
 
   const nhColor = profile.neighbourhoods?.color || '#1D9E75';
   const nhName  = profile.neighbourhoods?.name  || '–';

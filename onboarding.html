@@ -5,82 +5,148 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SthlmFit – Kom igång</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #0D1B2A; }
+    .ob-screen {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: #0D1B2A;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 20px;
+      box-sizing: border-box;
+    }
+    .ob-logo {
+      padding: 52px 0 28px;
+      font-size: 28px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.5px;
+      font-family: var(--font);
+      flex-shrink: 0;
+    }
+    .ob-logo span { color: var(--green); }
+    .ob-headline {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+    .ob-nh-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      max-width: 420px;
+    }
+    .ob-nh-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.65);
+      text-align: left;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    .ob-nh-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ob-btn-continue {
+      width: 100%;
+      padding: 16px 20px;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: var(--font);
+      cursor: pointer;
+      opacity: 0.35;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .ob-btn-continue.ready {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .ob-btn-strava {
+      width: 100%;
+      padding: 16px 20px;
+      background: #FC4C02;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+    .ob-skip {
+      margin-top: 14px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.3);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  </style>
 </head>
 <body>
-<div class="dark-page">
-  <!-- Same Stockholm skyline -->
-  <svg class="skyline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" preserveAspectRatio="xMidYMax slice">
-    <path fill="#1A2E42" d="
-      M0,200 L0,158
-      L22,158 L22,148 L38,148 L38,140 L50,140
-      L50,92 L53,92 L53,48 L55,40 L57,26 L59,14 L61,14
-      L63,26 L65,40 L67,48 L67,92
-      L82,92 L82,108 L95,108 L95,120 L112,120
-      L112,135 L130,135 L130,145 L150,145
-      L150,140 L162,140 L162,125
-      L175,125 L175,112 L188,112 L188,118
-      L195,118 L195,102 L205,102 L205,90
-      L210,75 L213,55 L215,32 L217,55 L219,75
-      L219,90 L228,90 L228,102 L242,102 L242,115
-      L258,115 L258,105 L272,105
-      L272,88 L290,88 L290,98
-      L305,98 L305,80 L325,80 L325,95 L342,95
-      L342,68 L362,68 L362,95
-      L378,95 L378,108 L398,108 L398,118
-      L420,118 L420,128 L448,128 L448,136
-      L478,136 L478,142 L515,142 L515,146
-      L558,146 L558,150 L610,150 L610,153
-      L800,153 L800,200 Z"/>
-    <path fill="#1A2E42" opacity="0.4"
-      d="M0,157 Q200,153 400,158 Q600,162 800,156 L800,167 Q600,170 400,165 Q200,160 0,164 Z"/>
-  </svg>
 
-  <div class="content">
-    <div class="wordmark">Sthlm<span>Fit</span></div>
+<!-- Screen 1: Neighbourhood picker -->
+<div class="ob-screen" id="screen1">
+  <div class="ob-logo">Sthlm<span>Fit</span></div>
+  <div class="ob-headline">Välj din stadsdel</div>
+  <div class="ob-nh-grid" id="nh-grid"></div>
+  <div style="flex:1"></div>
+  <div style="width:100%;max-width:420px;padding-bottom:32px;flex-shrink:0">
+    <button class="ob-btn-continue" id="fortsatt-btn">
+      Fortsätt <i class="ti ti-arrow-right" style="font-size:16px"></i>
+    </button>
+  </div>
+</div>
 
-    <div class="progress-bar" style="max-width:var(--max-w)">
-      <div class="progress-fill" id="progress" style="width:50%"></div>
+<!-- Screen 2: Strava connect -->
+<div class="ob-screen" id="screen2" style="display:none">
+  <div class="ob-logo">Sthlm<span>Fit</span></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:420px;text-align:center">
+    <i class="ti ti-brand-strava" style="font-size:72px;color:#FC4C02;margin-bottom:12px"></i>
+    <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:12px">Koppla Strava</div>
+    <div style="font-size:15px;color:rgba(255,255,255,0.5);line-height:1.6;max-width:280px">
+      Dina löpningar synkas automatiskt — du behöver aldrig logga manuellt
     </div>
-
-    <!-- Step 1: Name -->
-    <div id="step1" style="width:100%">
-      <h1 class="dark-headline" style="margin-bottom:20px">Vad heter du?</h1>
-      <div class="card">
-        <div class="alert alert-error" id="err1"></div>
-        <div class="field">
-          <label class="field-label">Förnamn</label>
-          <input type="text" class="input" id="name" placeholder="t.ex. Emma" autocomplete="given-name" autocapitalize="words" />
-        </div>
-        <button class="btn btn-primary" id="next1-btn">Nästa <i class="ti ti-arrow-right" style="font-size:16px"></i></button>
-      </div>
-    </div>
-
-    <!-- Step 2: Neighbourhood -->
-    <div id="step2" style="width:100%;display:none">
-      <h1 class="dark-headline" style="margin-bottom:20px">Vilken stadsdel representerar du?</h1>
-      <div class="card">
-        <div class="alert alert-error" id="err2"></div>
-        <div class="nh-grid" id="nh-grid"></div>
-        <button class="btn btn-primary" id="save-btn" style="margin-top:16px">
-          <i class="ti ti-run" style="font-size:17px"></i> Kom igång!
-        </button>
-      </div>
-    </div>
-
-    <!-- Step 3: Strava connect (optional) -->
-    <div id="step3" style="width:100%;display:none">
-      <h1 class="dark-headline" style="margin-bottom:8px">Koppla Strava</h1>
-      <p style="color:rgba(255,255,255,0.65);font-size:15px;margin-bottom:20px;line-height:1.5">
-        Synka dina löppass automatiskt så att dina km räknas för stadsdelen.
-      </p>
-      <div class="card">
-        <a id="strava-connect-btn" href="#" class="btn btn-primary"
-           style="background:#FC4C02;border:none;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;margin-bottom:12px">
-          <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
-        </a>
-        <a href="dashboard.html" class="skip-link" style="display:block;text-align:center">Hoppa över — gå till kartan</a>
-      </div>
-    </div>
+  </div>
+  <div style="width:100%;max-width:420px;padding-bottom:32px;flex-shrink:0;display:flex;flex-direction:column;align-items:center">
+    <a id="strava-btn" href="#" class="ob-btn-strava">
+      <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
+    </a>
+    <button class="ob-skip" id="skip-btn">Hoppa över — logga manuellt</button>
   </div>
 </div>
 
@@ -91,58 +157,55 @@
   const user = await requireAuth();
   if (!user) return;
 
-  // Already has profile → log
-  const existing = await getProfile(user.id);
-  if (existing) { location.href = 'dashboard.html'; return; }
+  const profile = await getProfile(user.id);
+  if (profile?.neighbourhood_id) { location.href = 'dashboard.html'; return; }
 
   let selectedNh = null;
-
-  // Build neighbourhood grid
   const grid = document.getElementById('nh-grid');
+  const continueBtn = document.getElementById('fortsatt-btn');
+
   NEIGHBOURHOODS.forEach(nh => {
     const card = document.createElement('button');
-    card.className = 'nh-card';
-    card.innerHTML = `<div class="nh-dot" style="background:${nh.color}"></div><div class="nh-name">${nh.name}</div>`;
+    card.className = 'ob-nh-card';
+    card.innerHTML = `<div class="ob-nh-dot" style="background:${nh.color}"></div><span>${nh.name}</span>`;
     card.addEventListener('click', () => {
       selectedNh = nh.id;
-      grid.querySelectorAll('.nh-card').forEach(c => c.classList.toggle('selected', c === card));
+      grid.querySelectorAll('.ob-nh-card').forEach(c => {
+        c.style.background = 'rgba(255,255,255,0.05)';
+        c.style.borderColor = 'rgba(255,255,255,0.08)';
+        c.style.color = 'rgba(255,255,255,0.65)';
+      });
+      card.style.background = nh.color + '26';
+      card.style.borderColor = nh.color;
+      card.style.color = '#fff';
+      continueBtn.classList.add('ready');
     });
     grid.appendChild(card);
   });
 
-  // Step 1: name
-  const nameEl = document.getElementById('name');
-  function nextStep1() {
-    const name = nameEl.value.trim();
-    if (!name) { const e = document.getElementById('err1'); e.textContent='Fyll i ditt namn.'; e.className='alert alert-error show'; return; }
-    document.getElementById('step1').style.display = 'none';
-    document.getElementById('step2').style.display = 'block';
-    document.getElementById('progress').style.width = '100%';
-  }
-  document.getElementById('next1-btn').addEventListener('click', nextStep1);
-  nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') nextStep1(); });
+  continueBtn.addEventListener('click', async () => {
+    if (!selectedNh) return;
+    continueBtn.disabled = true;
+    continueBtn.innerHTML = '<i class="ti ti-loader-2 spin-icon"></i> Sparar…';
 
-  // Step 2: save
-  document.getElementById('save-btn').addEventListener('click', async () => {
-    if (!selectedNh) {
-      const e = document.getElementById('err2'); e.textContent='Välj din stadsdel.'; e.className='alert alert-error show'; return;
-    }
-    const btn = document.getElementById('save-btn');
-    btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Sparar…';
-    const { error } = await sb.from('profiles').insert({
-      id: user.id,
-      name: document.getElementById('name').value.trim(),
-      neighbourhood_id: selectedNh,
-    });
+    const { error } = await sb.from('profiles')
+      .update({ neighbourhood_id: selectedNh })
+      .eq('id', user.id);
+
     if (error) {
-      const e = document.getElementById('err2'); e.textContent = error.message; e.className = 'alert alert-error show';
-      btn.disabled = false; btn.innerHTML = '<i class="ti ti-run"></i> Kom igång!';
+      continueBtn.disabled = false;
+      continueBtn.innerHTML = 'Fortsätt <i class="ti ti-arrow-right" style="font-size:16px"></i>';
+      alert(error.message);
       return;
     }
-    // Profile saved — offer Strava connection
-    document.getElementById('step2').style.display = 'none';
-    document.getElementById('step3').style.display = 'block';
-    document.getElementById('strava-connect-btn').href = STRAVA_AUTH_URL;
+
+    document.getElementById('screen1').style.display = 'none';
+    document.getElementById('screen2').style.display = 'flex';
+    document.getElementById('strava-btn').href = STRAVA_AUTH_URL;
+  });
+
+  document.getElementById('skip-btn').addEventListener('click', () => {
+    location.href = 'dashboard.html';
   });
 })();
 </script>

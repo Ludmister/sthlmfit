@@ -96,7 +96,7 @@ function kmOpacity(km) {
   GEO = geoRes;
 
   const profile = await getProfile(user.id);
-  if (!profile) { location.href = 'onboarding.html'; return; }
+  if (!profile?.neighbourhood_id) { location.href = 'onboarding.html'; return; }
 
   const myNhId    = profile.neighbourhood_id;
   const myNhColor = profile.neighbourhoods?.color || '#1D9E75';
