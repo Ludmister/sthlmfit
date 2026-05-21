@@ -27,6 +27,15 @@
     .nav-tab { color: rgba(255,255,255,0.38) !important; }
     .nav-tab.active { color: var(--hood-color) !important; }
     .spinner { border-color: rgba(255,255,255,0.08); border-top-color: var(--hood-color); }
+    @keyframes stravaPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+    .strava-pulse-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #FC4C02; flex-shrink: 0;
+      animation: stravaPulse 1.8s ease-in-out infinite;
+    }
   </style>
 </head>
 <body>
@@ -147,9 +156,17 @@
             </button>
           </div>
         ` : `
-          <a href="${STRAVA_AUTH_URL}" class="btn btn-strava" style="text-decoration:none">
-            <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
-          </a>
+          <div style="display:flex;align-items:center;gap:12px">
+            <i class="ti ti-brand-strava" style="color:#FC4C02;font-size:22px;flex-shrink:0"></i>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:2px">Strava sync</div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:500">Automatisk synkning — kommer snart</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(252,76,2,0.10);border:1px solid rgba(252,76,2,0.22);border-radius:99px">
+              <div class="strava-pulse-dot"></div>
+              <span style="font-size:11px;font-weight:700;color:#FC4C02;letter-spacing:0.03em">SNART</span>
+            </div>
+          </div>
         `}
       </div>
 
