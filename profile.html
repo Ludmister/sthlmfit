@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>SthlmFit – Profil</title>
   <link rel="stylesheet" href="style.css" />
   <style>
@@ -36,6 +36,103 @@
       background: #FC4C02; flex-shrink: 0;
       animation: stravaPulse 1.8s ease-in-out infinite;
     }
+
+    /* ── Section title ──────────────────────────────────── */
+    .sec-title {
+      font-size: 12px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: rgba(255,255,255,0.45);
+      margin: 24px 4px 10px; display: flex; align-items: center; gap: 7px;
+    }
+    .sec-title .ti { font-size: 15px; color: var(--hood-color); }
+
+    /* ── Add button (dashed) ────────────────────────────── */
+    .add-btn {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 13px; background: rgba(255,255,255,0.04);
+      border: 1.5px dashed rgba(255,255,255,0.18); border-radius: 12px;
+      color: rgba(255,255,255,0.7); font-family: var(--font);
+      font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 0.1s;
+    }
+    .add-btn:active { transform: scale(0.99); }
+    .add-btn .ti { font-size: 17px; }
+
+    /* ── Gear ───────────────────────────────────────────── */
+    .gear-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+    .gear-item:first-child { padding-top: 2px; }
+    .gear-item:last-child { border-bottom: none; padding-bottom: 2px; }
+    .gear-item.retired { opacity: 0.5; }
+    .gi-ic { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; background: rgba(var(--hood-rgb),0.12); color: var(--hood-color); display: flex; align-items: center; justify-content: center; }
+    .gi-ic .ti { font-size: 22px; }
+    .gi-name { font-size: 15px; font-weight: 700; color: #fff; }
+    .gi-brand { font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 500; margin-top: 1px; }
+    .gi-km { font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 600; margin-top: 6px; }
+    .pbar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; margin-top: 7px; }
+    .pfill { height: 100%; background: var(--green); border-radius: 99px; }
+    .pfill.warn { background: #F87171; }
+    .gi-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .icon-btn { width: 32px; height: 32px; border-radius: 9px; padding: 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; cursor: pointer; font-family: var(--font); }
+    .icon-btn .ti { font-size: 15px; }
+    .icon-btn:active { transform: scale(0.92); }
+    .icon-btn.danger { color: #FCA5A5; }
+
+    /* ── Empty state ────────────────────────────────────── */
+    .empty-mini { text-align: center; padding: 8px 0; }
+    .empty-mini .ti { font-size: 30px; color: rgba(255,255,255,0.2); }
+    .empty-mini-txt { font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 500; margin-top: 6px; }
+
+    /* ── Races ──────────────────────────────────────────── */
+    .race-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+    .race-item:first-child { padding-top: 2px; }
+    .race-item:last-child { border-bottom: none; padding-bottom: 2px; }
+    .race-cd { text-align: center; flex-shrink: 0; min-width: 50px; }
+    .race-cd-num { font-size: 24px; font-weight: 900; color: var(--hood-color); line-height: 1; letter-spacing: -1px; }
+    .race-cd-lbl { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px; }
+    .race-name { font-size: 15px; font-weight: 700; color: #fff; }
+    .race-meta { font-size: 12px; color: rgba(255,255,255,0.45); font-weight: 500; margin-top: 2px; }
+    .race-item.passed .race-cd-num { color: rgba(255,255,255,0.3); font-size: 16px; }
+
+    /* ── Streak banner ──────────────────────────────────── */
+    .streak-banner { display: flex; align-items: center; gap: 14px; }
+    .streak-fire { font-size: 32px; line-height: 1; }
+    .streak-num { font-size: 28px; font-weight: 900; color: var(--hood-color); line-height: 1; letter-spacing: -1px; }
+    .streak-lbl { font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 600; margin-top: 4px; }
+
+    /* ── Badge grid ─────────────────────────────────────── */
+    .badge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .badge { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 15px 12px; text-align: center; }
+    .badge.earned { border-color: rgba(var(--hood-rgb),0.35); background: rgba(var(--hood-rgb),0.08); }
+    .badge.locked { opacity: 0.32; }
+    .badge-emoji { font-size: 26px; line-height: 1; }
+    .badge-name { font-size: 12px; font-weight: 700; color: #fff; margin-top: 8px; line-height: 1.25; }
+    .badge-sub { font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 500; margin-top: 2px; }
+
+    /* ── Disclaimer ─────────────────────────────────────── */
+    .disclaimer { font-size: 11px; color: rgba(255,255,255,0.35); font-weight: 500; margin-top: 10px; display: flex; align-items: center; gap: 5px; }
+    .disclaimer .ti { font-size: 13px; }
+
+    /* ── Modal (iOS sheet) ──────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 1500;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      opacity: 0; visibility: hidden; transition: opacity 0.28s ease;
+    }
+    .modal-overlay.open { opacity: 1; visibility: visible; }
+    .modal-sheet {
+      position: absolute; left: 50%; bottom: 0;
+      transform: translateX(-50%) translateY(100%);
+      width: 100%; max-width: var(--max-w);
+      background: #1A2E42; border-radius: 20px 20px 0 0;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 20px calc(24px + env(safe-area-inset-bottom));
+      max-height: 90vh; overflow-y: auto;
+      transition: transform 0.34s cubic-bezier(0.32,0.72,0,1);
+    }
+    .modal-overlay.open .modal-sheet { transform: translateX(-50%) translateY(0); }
+    .modal-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.22); border-radius: 99px; margin: 8px auto 10px; }
+    .modal-close { position: absolute; top: 14px; right: 16px; width: 32px; height: 32px; border-radius: 50%; padding: 0; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; cursor: pointer; font-family: var(--font); }
+    .modal-close .ti { font-size: 18px; }
+    .modal-title { font-size: 18px; font-weight: 800; color: #fff; margin: 2px 0 16px; padding-right: 40px; }
   </style>
 </head>
 <body>
@@ -63,8 +160,16 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
+// ── Pure helpers ──────────────────────────────────────────
+const MONTHS_SHORT = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+const fmt  = km => Number(km).toFixed(1).replace('.', ',');
+const ymd  = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const mondayOf = d => { const x = new Date(d); const day = x.getDay(); x.setDate(x.getDate()-(day===0?6:day-1)); x.setHours(0,0,0,0); return x; };
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
 (async () => {
-  const user    = await requireAuth();
+  const user = await requireAuth();
   if (!user) return;
   const profile = await getProfile(user.id);
   if (!profile?.neighbourhood_id) { location.href = 'onboarding.html'; return; }
@@ -72,34 +177,34 @@
   const nhColor = profile.neighbourhoods?.color || '#1D9E75';
   const nhName  = profile.neighbourhoods?.name  || '–';
 
-  // Apply neighbourhood theme
   const _c = nhColor.replace('#','');
   document.body.style.setProperty('--hood-color', nhColor);
   document.body.style.setProperty('--hood-rgb',
     `${parseInt(_c.slice(0,2),16)},${parseInt(_c.slice(2,4),16)},${parseInt(_c.slice(4,6),16)}`);
 
-  const weekStart = (() => {
-    const d = new Date(); const day = d.getDay();
-    d.setDate(d.getDate() - (day===0?6:day-1));
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  })();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const weekStart = ymd(mondayOf(today));
 
-  const [allWoRes, weekWoRes, datesRes] = await Promise.all([
-    sb.from('workouts').select('km').eq('user_id', user.id),
-    sb.from('workouts').select('km').eq('user_id', user.id).gte('logged_date', weekStart),
-    sb.from('workouts').select('logged_date').eq('user_id', user.id).order('logged_date', { ascending: false }),
+  // ── Data ────────────────────────────────────────────────
+  const [woRes, gearRes, racesRes] = await Promise.all([
+    sb.from('workouts').select('km, logged_date, created_at').eq('user_id', user.id).order('logged_date', { ascending: false }),
+    sb.from('gear').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    sb.from('races').select('*').eq('user_id', user.id).order('race_date', { ascending: true }),
   ]);
+  const wo    = woRes.data || [];
+  const gear  = gearRes.error  ? [] : (gearRes.data  || []);
+  const races = racesRes.error ? [] : (racesRes.data || []);
 
-  const totalKm = (allWoRes.data  || []).reduce((s,w) => s+Number(w.km), 0);
-  const weekKm  = (weekWoRes.data || []).reduce((s,w) => s+Number(w.km), 0);
+  const totalKm = wo.reduce((s,w) => s + Number(w.km), 0);
+  const weekKm  = wo.filter(w => w.logged_date >= weekStart).reduce((s,w) => s + Number(w.km), 0);
 
-  const uniqueDates = [...new Set((datesRes.data||[]).map(w=>w.logged_date))];
+  // Daily streak (consecutive days)
+  const uniqueDates = [...new Set(wo.map(w => w.logged_date))];
   let streak = 0;
   if (uniqueDates.length > 0) {
-    const today = getTodayStr();
-    const yd = new Date(); yd.setDate(yd.getDate()-1);
-    const yesterday = `${yd.getFullYear()}-${String(yd.getMonth()+1).padStart(2,'0')}-${String(yd.getDate()).padStart(2,'0')}`;
-    if (uniqueDates[0] === today || uniqueDates[0] === yesterday) {
+    const todayStr = getTodayStr();
+    const yStr = ymd(addDays(today, -1));
+    if (uniqueDates[0] === todayStr || uniqueDates[0] === yStr) {
       streak = 1;
       for (let i = 1; i < uniqueDates.length; i++) {
         const diff = Math.round((new Date(uniqueDates[i-1]) - new Date(uniqueDates[i])) / 86400000);
@@ -108,6 +213,97 @@
     }
   }
 
+  // Weekly streak (consecutive weeks with >=1 run)
+  const weekKeys = new Set(wo.map(w => ymd(mondayOf(new Date(w.logged_date + 'T00:00:00')))));
+  let weekStreak = 0;
+  {
+    const curMon = mondayOf(today);
+    const curKey = ymd(curMon), prevKey = ymd(addDays(curMon, -7));
+    if (weekKeys.has(curKey) || weekKeys.has(prevKey)) {
+      let s = weekKeys.has(curKey) ? curMon : addDays(curMon, -7);
+      while (weekKeys.has(ymd(s))) { weekStreak++; s = addDays(s, -7); }
+    }
+  }
+
+  // Max runs in a single week (for badge)
+  const perWeek = {};
+  wo.forEach(w => { const k = ymd(mondayOf(new Date(w.logged_date + 'T00:00:00'))); perWeek[k] = (perWeek[k]||0) + 1; });
+  const maxRunsWeek = Object.values(perWeek).reduce((m,v) => Math.max(m,v), 0);
+
+  // ── Section builders ────────────────────────────────────
+  const gearRows = gear.map(g => {
+    const used  = wo.filter(w => w.logged_date >= g.purchase_date).reduce((s,w) => s + Number(w.km), 0);
+    const maxKm = Number(g.max_km || 800);
+    const ratio = maxKm > 0 ? used / maxKm : 0;
+    const pct   = Math.min(100, Math.round(ratio * 100));
+    const warn  = ratio > 0.85;
+    return `<div class="gear-item${g.active ? '' : ' retired'}">
+      <div class="gi-ic"><i class="ti ti-shoe"></i></div>
+      <div style="flex:1;min-width:0">
+        <div class="gi-name">${esc(g.name)}${g.active ? '' : ' <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4)">(pensionerad)</span>'}</div>
+        <div class="gi-brand">${esc(g.brand || 'Löparskor')}</div>
+        <div class="pbar"><div class="pfill${warn ? ' warn' : ''}" style="width:${pct}%"></div></div>
+        <div class="gi-km">${fmt(used)} / ${maxKm} km</div>
+      </div>
+      <div class="gi-actions">
+        <button class="icon-btn gear-toggle" data-id="${g.id}" aria-label="${g.active ? 'Pensionera' : 'Aktivera'}"><i class="ti ti-${g.active ? 'archive' : 'check'}"></i></button>
+        <button class="icon-btn gear-edit" data-id="${g.id}" aria-label="Redigera"><i class="ti ti-pencil"></i></button>
+        <button class="icon-btn danger gear-del" data-id="${g.id}" aria-label="Ta bort"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+  const gearHtml = `<div class="card">${gear.length ? gearRows : `<div class="empty-mini"><i class="ti ti-shoe"></i><div class="empty-mini-txt">Inga skor tillagda än</div></div>`}</div>
+    <button class="add-btn" id="add-gear" style="margin-top:10px"><i class="ti ti-plus"></i> Lägg till skor</button>`;
+
+  const raceRows = races.map(r => {
+    const rd = new Date(r.race_date + 'T00:00:00');
+    const days = Math.round((rd - today) / 86400000);
+    const passed = days < 0;
+    const cdNum = passed ? '✓' : days;
+    const cdLbl = passed ? 'klart' : (days === 0 ? 'idag!' : (days === 1 ? 'dag kvar' : 'dagar kvar'));
+    const meta = [`${rd.getDate()} ${MONTHS_SHORT[rd.getMonth()]} ${rd.getFullYear()}`];
+    if (r.location)  meta.push(esc(r.location));
+    if (r.goal_time) meta.push('mål ' + esc(r.goal_time));
+    return `<div class="race-item${passed ? ' passed' : ''}">
+      <div class="race-cd"><div class="race-cd-num">${cdNum}</div><div class="race-cd-lbl">${cdLbl}</div></div>
+      <div style="flex:1;min-width:0">
+        <div class="race-name">${esc(r.name)}</div>
+        <div class="race-meta">${meta.join(' · ')}</div>
+      </div>
+      <button class="icon-btn danger race-del" data-id="${r.id}" aria-label="Ta bort"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+  const racesHtml = `<div class="card">${races.length ? raceRows : `<div class="empty-mini"><i class="ti ti-flag"></i><div class="empty-mini-txt">Inga lopp inlagda än</div></div>`}</div>
+    <button class="add-btn" id="add-race" style="margin-top:10px"><i class="ti ti-plus"></i> Lägg till lopp</button>`;
+
+  const badges = [
+    { emoji: '🏃', name: 'Första passet',         sub: 'Logga ett pass',  earned: wo.length >= 1 },
+    { emoji: '🔥', name: 'Första veckan i rad',   sub: '1 vecka med pass', earned: weekStreak >= 1 },
+    { emoji: '💪', name: '5 pass på en vecka',    sub: '5 pass / vecka',  earned: maxRunsWeek >= 5 },
+    { emoji: '🎯', name: '50 km totalt',          sub: 'Spring 50 km',    earned: totalKm >= 50 },
+    { emoji: '🏆', name: '100 km totalt',         sub: 'Spring 100 km',   earned: totalKm >= 100 },
+  ];
+  const earnedCount = badges.filter(b => b.earned).length;
+  const badgeHtml = `
+    <div class="card" style="margin-bottom:10px">
+      <div class="streak-banner">
+        <div class="streak-fire">🔥</div>
+        <div>
+          <div class="streak-num">${weekStreak} ${weekStreak === 1 ? 'vecka' : 'veckor'}</div>
+          <div class="streak-lbl">i rad med minst ett pass</div>
+        </div>
+      </div>
+    </div>
+    <div class="badge-grid">
+      ${badges.map(b => `
+        <div class="badge ${b.earned ? 'earned' : 'locked'}">
+          <div class="badge-emoji">${b.emoji}</div>
+          <div class="badge-name">${b.name}</div>
+          <div class="badge-sub">${b.earned ? 'Upplåst' : b.sub}</div>
+        </div>`).join('')}
+    </div>`;
+
+  // ── Render ──────────────────────────────────────────────
   document.getElementById('content').innerHTML = `
     <div class="page-padded">
 
@@ -118,19 +314,19 @@
              background:rgba(255,255,255,0.07);border:2.5px solid ${nhColor};
              display:flex;align-items:center;justify-content:center;
              font-size:24px;font-weight:900;color:${nhColor};margin-bottom:4px;position:relative;z-index:1">
-          ${(profile.name||'?')[0].toUpperCase()}
+          ${esc((profile.name||'?')[0].toUpperCase())}
         </div>
-        <div style="font-size:20px;font-weight:800;line-height:1.2;color:#fff;position:relative;z-index:1">${profile.name||'(Ej satt)'}</div>
+        <div style="font-size:20px;font-weight:800;line-height:1.2;color:#fff;position:relative;z-index:1">${esc(profile.name||'(Ej satt)')}</div>
         <div style="display:flex;align-items:center;gap:6px;position:relative;z-index:1">
           <div style="width:8px;height:8px;border-radius:50%;background:${nhColor}"></div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.55);font-weight:600">${nhName}</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.55);font-weight:600">${esc(nhName)}</div>
         </div>
       </div>
 
       <!-- Stats -->
       <div class="stat-grid" style="margin-bottom:12px">
         <div class="stat-box">
-          <div class="stat-val green">${weekKm.toFixed(1).replace('.',',')}</div>
+          <div class="stat-val green">${fmt(weekKm)}</div>
           <div class="stat-lbl">km i veckan</div>
         </div>
         <div class="stat-box">
@@ -170,11 +366,11 @@
         `}
       </div>
 
-      <!-- Edit -->
+      <!-- Edit name + neighbourhood -->
       <div class="card" style="margin-bottom:12px">
         <div class="field" style="margin-bottom:12px">
           <label class="field-label">Namn</label>
-          <input type="text" class="input" id="edit-name" value="${profile.name||''}" />
+          <input type="text" class="input" id="edit-name" value="${esc(profile.name||'')}" />
         </div>
         <div class="field-label" style="margin-bottom:8px">Stadsdel</div>
         <div class="nh-grid" id="nh-grid"></div>
@@ -184,10 +380,49 @@
         <div class="alert" id="save-msg" style="margin-top:8px"></div>
       </div>
 
+      <!-- 1. MINA SKOR -->
+      <div class="sec-title"><i class="ti ti-shoe"></i> Mina skor</div>
+      ${gearHtml}
+
+      <!-- 2. LOPP JAG SIKTAR PÅ -->
+      <div class="sec-title"><i class="ti ti-flag"></i> Lopp jag siktar på</div>
+      ${racesHtml}
+
+      <!-- 3. MITT MANTRA -->
+      <div class="sec-title"><i class="ti ti-quote"></i> Mitt mantra</div>
+      <div class="card">
+        <input type="text" class="input" id="mantra-input" maxlength="120" placeholder="Skriv ditt motto…" value="${esc(profile.mantra||'')}" />
+        <button class="btn btn-primary" id="mantra-save" style="margin-top:10px"><i class="ti ti-check"></i> Spara mantra</button>
+        <div class="alert" id="mantra-msg" style="margin-top:8px"></div>
+      </div>
+
+      <!-- 4. KROPPSMÅTT -->
+      <div class="sec-title"><i class="ti ti-ruler-2"></i> Kroppsmått</div>
+      <div class="card">
+        <div style="display:flex;gap:10px">
+          <div class="field" style="flex:1;margin:0">
+            <label class="field-label">Längd (cm)</label>
+            <input type="number" class="input" id="height-input" min="100" max="250" placeholder="—" value="${profile.height_cm ?? ''}" />
+          </div>
+          <div class="field" style="flex:1;margin:0">
+            <label class="field-label">Vikt (kg)</label>
+            <input type="number" class="input" id="weight-input" min="30" max="300" step="0.1" placeholder="—" value="${profile.weight_kg ?? ''}" />
+          </div>
+        </div>
+        <button class="btn btn-primary" id="body-save" style="margin-top:12px"><i class="ti ti-check"></i> Spara</button>
+        <div class="alert" id="body-msg" style="margin-top:8px"></div>
+        <div class="disclaimer"><i class="ti ti-lock"></i> Detta är frivilligt och syns bara för dig</div>
+      </div>
+
+      <!-- 5. BELÖNINGAR & STREAKS -->
+      <div class="sec-title"><i class="ti ti-award"></i> Belöningar & streaks <span style="margin-left:auto;color:rgba(255,255,255,0.35);letter-spacing:0">${earnedCount}/${badges.length}</span></div>
+      ${badgeHtml}
+
+      <div style="height:24px"></div>
     </div>
   `;
 
-  // Neighbourhood grid
+  // ── Neighbourhood grid ──────────────────────────────────
   let selectedNh = profile.neighbourhood_id;
   const grid = document.getElementById('nh-grid');
   NEIGHBOURHOODS.forEach(nh => {
@@ -201,37 +436,178 @@
     grid.appendChild(card);
   });
 
+  // ── Save name + neighbourhood ───────────────────────────
   document.getElementById('save-btn').addEventListener('click', async () => {
     const name = document.getElementById('edit-name').value.trim();
     const btn  = document.getElementById('save-btn');
     const msg  = document.getElementById('save-msg');
     btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin-icon"></i> Sparar…';
     const { error } = await sb.from('profiles').update({ name, neighbourhood_id: selectedNh }).eq('id', user.id);
-    if (error) {
-      msg.textContent = error.message; msg.className = 'alert alert-error show';
-    } else {
-      msg.textContent = 'Sparat!'; msg.className = 'alert alert-success show';
-      setTimeout(() => { msg.className = 'alert'; }, 2500);
-    }
+    if (error) { msg.textContent = error.message; msg.className = 'alert alert-error show'; }
+    else { msg.textContent = 'Sparat!'; msg.className = 'alert alert-success show'; setTimeout(() => { msg.className = 'alert'; }, 2500); }
     btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Spara ändringar';
   });
 
+  // ── Strava disconnect ───────────────────────────────────
   const disBtn = document.getElementById('strava-disconnect-btn');
-  if (disBtn) {
-    disBtn.addEventListener('click', async () => {
-      if (!confirm('Koppla från Strava? Dina loggade löppass påverkas inte.')) return;
-      disBtn.disabled = true;
-      await sb.from('strava_tokens').delete().eq('user_id', user.id);
-      await sb.from('profiles').update({ strava_connected: false, strava_athlete_name: null }).eq('id', user.id);
+  if (disBtn) disBtn.addEventListener('click', async () => {
+    if (!confirm('Koppla från Strava? Dina loggade löppass påverkas inte.')) return;
+    disBtn.disabled = true;
+    await sb.from('strava_tokens').delete().eq('user_id', user.id);
+    await sb.from('profiles').update({ strava_connected: false, strava_athlete_name: null }).eq('id', user.id);
+    location.reload();
+  });
+
+  // ── Mantra ──────────────────────────────────────────────
+  document.getElementById('mantra-save').addEventListener('click', async () => {
+    const mantra = document.getElementById('mantra-input').value.trim();
+    const btn = document.getElementById('mantra-save');
+    const msg = document.getElementById('mantra-msg');
+    btn.disabled = true;
+    const { error } = await sb.from('profiles').update({ mantra: mantra || null }).eq('id', user.id);
+    if (error) { msg.textContent = error.message; msg.className = 'alert alert-error show'; }
+    else { msg.textContent = 'Sparat!'; msg.className = 'alert alert-success show'; setTimeout(() => { msg.className = 'alert'; }, 2500); }
+    btn.disabled = false;
+  });
+
+  // ── Body measurements ───────────────────────────────────
+  document.getElementById('body-save').addEventListener('click', async () => {
+    const hv = document.getElementById('height-input').value;
+    const wv = document.getElementById('weight-input').value;
+    const btn = document.getElementById('body-save');
+    const msg = document.getElementById('body-msg');
+    btn.disabled = true;
+    const { error } = await sb.from('profiles').update({
+      height_cm: hv === '' ? null : parseInt(hv),
+      weight_kg: wv === '' ? null : parseFloat(wv),
+    }).eq('id', user.id);
+    if (error) { msg.textContent = error.message; msg.className = 'alert alert-error show'; }
+    else { msg.textContent = 'Sparat!'; msg.className = 'alert alert-success show'; setTimeout(() => { msg.className = 'alert'; }, 2500); }
+    btn.disabled = false;
+  });
+
+  // ── Gear actions ────────────────────────────────────────
+  document.getElementById('add-gear').addEventListener('click', () => openGearModal(null));
+  document.querySelectorAll('.gear-edit').forEach(b =>
+    b.addEventListener('click', () => openGearModal(gear.find(g => g.id === b.dataset.id))));
+  document.querySelectorAll('.gear-toggle').forEach(b =>
+    b.addEventListener('click', async () => {
+      const g = gear.find(x => x.id === b.dataset.id);
+      await sb.from('gear').update({ active: !g.active }).eq('id', g.id);
+      location.reload();
+    }));
+  document.querySelectorAll('.gear-del').forEach(b =>
+    b.addEventListener('click', async () => {
+      if (!confirm('Ta bort dessa skor?')) return;
+      await sb.from('gear').delete().eq('id', b.dataset.id);
+      location.reload();
+    }));
+
+  // ── Race actions ────────────────────────────────────────
+  document.getElementById('add-race').addEventListener('click', openRaceModal);
+  document.querySelectorAll('.race-del').forEach(b =>
+    b.addEventListener('click', async () => {
+      if (!confirm('Ta bort detta lopp?')) return;
+      await sb.from('races').delete().eq('id', b.dataset.id);
+      location.reload();
+    }));
+
+  // ── Logout ──────────────────────────────────────────────
+  document.getElementById('logout-pill').addEventListener('click', async () => {
+    await sb.auth.signOut(); location.href = 'login.html';
+  });
+
+  // ── Modal plumbing ──────────────────────────────────────
+  const modalOverlay = document.getElementById('modal-overlay');
+  const modalSheet   = modalOverlay.querySelector('.modal-sheet');
+  const modalTitle   = document.getElementById('modal-title');
+  const modalBody    = document.getElementById('modal-body');
+  function openModal()  { modalSheet.scrollTop = 0; modalOverlay.classList.add('open'); }
+  function closeModal() { modalOverlay.classList.remove('open'); }
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modalOverlay.classList.contains('open')) closeModal(); });
+  const mHandle = document.getElementById('modal-handle');
+  let my = null;
+  mHandle.addEventListener('touchstart', e => { my = e.touches[0].clientY; modalSheet.style.transition = 'none'; }, { passive: true });
+  mHandle.addEventListener('touchmove',  e => { if (my == null) return; const dy = Math.max(0, e.touches[0].clientY - my); modalSheet.style.transform = `translateX(-50%) translateY(${dy}px)`; }, { passive: true });
+  mHandle.addEventListener('touchend',   e => { if (my == null) return; const dy = e.changedTouches[0].clientY - my; modalSheet.style.transition = ''; modalSheet.style.transform = ''; if (dy > 80) closeModal(); my = null; }, { passive: true });
+
+  function openGearModal(item) {
+    const isEdit = !!item;
+    modalTitle.textContent = isEdit ? 'Redigera skor' : 'Lägg till skor';
+    modalBody.innerHTML = `
+      <div class="field"><label class="field-label">Namn</label>
+        <input type="text" class="input" id="gm-name" placeholder="t.ex. Nike Pegasus 40" value="${isEdit ? esc(item.name) : ''}" /></div>
+      <div class="field"><label class="field-label">Märke</label>
+        <input type="text" class="input" id="gm-brand" placeholder="t.ex. Nike" value="${isEdit ? esc(item.brand||'') : ''}" /></div>
+      <div style="display:flex;gap:10px">
+        <div class="field" style="flex:1.4"><label class="field-label">Inköpsdatum</label>
+          <input type="date" class="input" id="gm-date" value="${isEdit ? item.purchase_date : getTodayStr()}" /></div>
+        <div class="field" style="flex:1"><label class="field-label">Max km</label>
+          <input type="number" class="input" id="gm-max" min="100" max="2000" value="${isEdit ? item.max_km : 800}" /></div>
+      </div>
+      <button class="btn btn-primary" id="gm-save" style="margin-top:6px"><i class="ti ti-check"></i> ${isEdit ? 'Spara' : 'Lägg till'}</button>
+      <div class="alert" id="gm-msg" style="margin-top:8px"></div>`;
+    openModal();
+    document.getElementById('gm-save').addEventListener('click', async () => {
+      const name  = document.getElementById('gm-name').value.trim();
+      const brand = document.getElementById('gm-brand').value.trim();
+      const purchase_date = document.getElementById('gm-date').value;
+      const max_km = parseInt(document.getElementById('gm-max').value) || 800;
+      const msg = document.getElementById('gm-msg');
+      if (!name)          { msg.textContent = 'Ange ett namn.';      msg.className = 'alert alert-error show'; return; }
+      if (!purchase_date) { msg.textContent = 'Välj inköpsdatum.';   msg.className = 'alert alert-error show'; return; }
+      const btn = document.getElementById('gm-save'); btn.disabled = true;
+      const payload = { name, brand: brand || null, purchase_date, max_km };
+      const { error } = isEdit
+        ? await sb.from('gear').update(payload).eq('id', item.id)
+        : await sb.from('gear').insert({ ...payload, user_id: user.id, active: true });
+      if (error) { msg.textContent = error.message; msg.className = 'alert alert-error show'; btn.disabled = false; return; }
       location.reload();
     });
   }
 
-  document.getElementById('logout-pill').addEventListener('click', async () => {
-    await sb.auth.signOut(); location.href = 'login.html';
-  });
+  function openRaceModal() {
+    modalTitle.textContent = 'Lägg till lopp';
+    modalBody.innerHTML = `
+      <div class="field"><label class="field-label">Lopp</label>
+        <input type="text" class="input" id="rm-name" placeholder="t.ex. Stockholm Marathon" /></div>
+      <div class="field"><label class="field-label">Datum</label>
+        <input type="date" class="input" id="rm-date" /></div>
+      <div class="field"><label class="field-label">Plats (valfritt)</label>
+        <input type="text" class="input" id="rm-loc" placeholder="t.ex. Stockholm" /></div>
+      <div class="field"><label class="field-label">Måltid (valfritt)</label>
+        <input type="text" class="input" id="rm-goal" placeholder="t.ex. 3:45:00" /></div>
+      <button class="btn btn-primary" id="rm-save" style="margin-top:6px"><i class="ti ti-check"></i> Lägg till</button>
+      <div class="alert" id="rm-msg" style="margin-top:8px"></div>`;
+    openModal();
+    document.getElementById('rm-save').addEventListener('click', async () => {
+      const name = document.getElementById('rm-name').value.trim();
+      const race_date = document.getElementById('rm-date').value;
+      const location  = document.getElementById('rm-loc').value.trim();
+      const goal_time = document.getElementById('rm-goal').value.trim();
+      const msg = document.getElementById('rm-msg');
+      if (!name)      { msg.textContent = 'Ange loppets namn.'; msg.className = 'alert alert-error show'; return; }
+      if (!race_date) { msg.textContent = 'Välj datum.';        msg.className = 'alert alert-error show'; return; }
+      const btn = document.getElementById('rm-save'); btn.disabled = true;
+      const { error } = await sb.from('races').insert({ user_id: user.id, name, race_date, location: location || null, goal_time: goal_time || null });
+      if (error) { msg.textContent = error.message; msg.className = 'alert alert-error show'; btn.disabled = false; return; }
+      location.reload();
+    });
+  }
 })();
 </script>
+
+<!-- Reusable iOS-style modal -->
+<div id="modal-overlay" class="modal-overlay">
+  <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-handle" id="modal-handle"></div>
+    <button class="modal-close" id="modal-close" aria-label="Stäng"><i class="ti ti-x"></i></button>
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
 
 <button id="logout-pill" style="position:fixed;bottom:16px;left:16px;z-index:1000;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(153,27,27,0.15);border:0.5px solid rgba(153,27,27,0.4);border-radius:99px;cursor:pointer;font-family:var(--font);font-size:12px;color:#FCA5A5">
   <i class="ti ti-logout" style="font-size:13px"></i> Logga ut
