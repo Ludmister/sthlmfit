@@ -192,6 +192,64 @@
     .nav-tab { color: rgba(255,255,255,0.38) !important; }
     .nav-tab.active { color: var(--hood-color) !important; }
     .spinner { border-color: rgba(255,255,255,0.08); border-top-color: var(--hood-color); }
+
+    /* ── Tappable affordance ────────────────────────────── */
+    .tappable { cursor: pointer; position: relative; transition: transform 0.1s; }
+    .tappable:active { transform: scale(0.99); }
+    .tap-chevron { position: absolute; top: 16px; right: 16px; color: rgba(255,255,255,0.25); font-size: 18px; }
+    .bar-col { cursor: pointer; }
+
+    /* ── Detail sheet (iOS-style) ───────────────────────── */
+    .sheet-overlay {
+      position: fixed; inset: 0; z-index: 1500;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      opacity: 0; visibility: hidden; transition: opacity 0.28s ease;
+    }
+    .sheet-overlay.open { opacity: 1; visibility: visible; }
+    .detail-sheet {
+      position: absolute; left: 50%; bottom: 0;
+      transform: translateX(-50%) translateY(100%);
+      width: 100%; max-width: var(--max-w);
+      background: var(--navy-mid);
+      border-radius: 20px 20px 0 0;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 20px calc(28px + env(safe-area-inset-bottom));
+      max-height: 86vh; overflow-y: auto;
+      transition: transform 0.34s cubic-bezier(0.32,0.72,0,1);
+    }
+    .sheet-overlay.open .detail-sheet { transform: translateX(-50%) translateY(0); }
+    .sheet-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.22); border-radius: 99px; margin: 8px auto 8px; }
+    .sheet-close {
+      position: absolute; top: 14px; right: 16px;
+      width: 32px; height: 32px; border-radius: 50%; padding: 0;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-family: var(--font);
+    }
+    .sheet-close .ti { font-size: 18px; }
+    .sheet-title { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -0.3px; margin: 4px 0 14px; padding-right: 40px; }
+    .sheet-hero { font-size: 40px; font-weight: 900; color: var(--hood-color); line-height: 1; letter-spacing: -2px; }
+    .sheet-hero .u { font-size: 18px; font-weight: 800; color: rgba(255,255,255,0.35); }
+    .sheet-sub { font-size: 13px; color: rgba(255,255,255,0.5); font-weight: 500; margin: 4px 0 14px; }
+    .sheet-sec-lbl { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.06em; margin: 18px 0 8px; }
+    .run-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+    .run-row:last-child { border-bottom: none; }
+    .run-ic { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; background: rgba(var(--hood-rgb),0.12); color: var(--hood-color); display: flex; align-items: center; justify-content: center; }
+    .run-ic .ti { font-size: 17px; }
+    .run-km { font-size: 15px; font-weight: 700; color: #fff; }
+    .run-meta { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+    .sheet-empty { text-align: center; color: rgba(255,255,255,0.4); font-size: 14px; font-weight: 500; padding: 28px 0; }
+    .stat-pair { display: flex; gap: 10px; }
+    .stat-pill { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 12px 14px; }
+    .stat-pill .v { font-size: 17px; font-weight: 800; color: #fff; }
+    .stat-pill .l { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 600; margin-top: 2px; }
+    .cmp-bars { display: flex; align-items: flex-end; gap: 6px; height: 110px; }
+    .cmp-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; justify-content: flex-end; }
+    .cmp-bar { width: 100%; border-radius: 5px 5px 2px 2px; background: rgba(29,158,117,0.3); }
+    .cmp-bar.cur { background: var(--hood-color); }
+    .cmp-val { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.5); }
+    .cmp-lbl { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.35); }
   </style>
 </head>
 <body>
@@ -212,6 +270,16 @@
 <div id="map-overlay">
   <div id="full-map"></div>
   <button id="map-close" aria-label="Stäng karta"><i class="ti ti-x"></i></button>
+</div>
+
+<!-- Detail sheet (reused for all breakdowns) -->
+<div id="sheet-overlay" class="sheet-overlay">
+  <div class="detail-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet-handle" id="sheet-handle"></div>
+    <button class="sheet-close" id="sheet-close" aria-label="Stäng"><i class="ti ti-x"></i></button>
+    <div class="sheet-title" id="sheet-title"></div>
+    <div id="sheet-body"></div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -349,16 +417,17 @@ function floatKmUp(km, color) {
     const warn   = pctRaw > 0.85;
     const left   = Math.max(0, maxKm - used);
     gearHtml = `
-      <div class="gear-row">
+      <div class="gear-row tappable" id="gear-row">
         <div class="gear-icon"><i class="ti ti-shoe"></i></div>
         <div style="flex:1;min-width:0">
           <div class="gear-name">${g.name}</div>
           <div class="gear-brand">${g.brand || 'Löparskor'}</div>
         </div>
-        <div>
+        <div style="text-align:right">
           <div class="gear-km">${fmt(used)} km</div>
           <div class="gear-km-max">av ${maxKm} km</div>
         </div>
+        <i class="ti ti-chevron-right" style="color:rgba(255,255,255,0.25);font-size:18px;flex-shrink:0"></i>
       </div>
       <div class="prog-track"><div class="prog-fill${warn ? ' warn' : ''}" style="width:${pct}%"></div></div>
       <div class="gear-left">${warn ? 'Dags att byta skor snart' : `${fmt(left)} km kvar`}</div>`;
@@ -388,7 +457,8 @@ function floatKmUp(km, color) {
     <div class="dash-content">
 
       <!-- Weekly stats hero -->
-      <div class="d-card">
+      <div class="d-card tappable" id="week-card">
+        <i class="ti ti-chevron-right tap-chevron"></i>
         <div class="d-lbl">Denna vecka</div>
         <div class="hero-num">${fmt(weekKm)} <span class="hero-unit">km</span></div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
@@ -412,20 +482,23 @@ function floatKmUp(km, color) {
       </div>
 
       <!-- Time filter / total view -->
-      <div class="d-card">
+      <div class="d-card" id="period-card">
         <div class="seg" id="seg">
           <button class="seg-btn active" data-p="vecka">Vecka</button>
           <button class="seg-btn" data-p="manad">Månad</button>
           <button class="seg-btn" data-p="ar">År</button>
         </div>
-        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;cursor:pointer">
           <div>
             <div class="hero-num" id="period-km" style="font-size:34px;margin:0">${fmt(periods.vecka.km)} <span class="hero-unit" style="font-size:16px">km</span></div>
             <div class="d-lbl" id="period-lbl" style="margin-top:4px">${periods.vecka.label}</div>
           </div>
-          <div style="text-align:right">
-            <div style="font-size:20px;font-weight:800;color:#fff" id="period-runs">${periods.vecka.runs}</div>
-            <div class="d-lbl" style="margin-top:2px">pass</div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="text-align:right">
+              <div style="font-size:20px;font-weight:800;color:#fff" id="period-runs">${periods.vecka.runs}</div>
+              <div class="d-lbl" style="margin-top:2px">pass</div>
+            </div>
+            <i class="ti ti-chevron-right" style="color:rgba(255,255,255,0.25);font-size:18px"></i>
           </div>
         </div>
       </div>
@@ -473,11 +546,13 @@ function floatKmUp(km, color) {
   `;
 
   // ── Time filter behaviour ──────────────────────────────
+  let curPeriod = 'vecka';
   document.getElementById('seg').addEventListener('click', e => {
     const btn = e.target.closest('.seg-btn');
     if (!btn) return;
+    curPeriod = btn.dataset.p;
     document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b === btn));
-    const p = periods[btn.dataset.p];
+    const p = periods[curPeriod];
     document.getElementById('period-km').innerHTML = `${fmt(p.km)} <span class="hero-unit" style="font-size:16px">km</span>`;
     document.getElementById('period-lbl').textContent = p.label;
     document.getElementById('period-runs').textContent = p.runs;
@@ -549,6 +624,155 @@ function floatKmUp(km, color) {
   document.getElementById('map-close').addEventListener('click', () => {
     overlay.classList.remove('open');
   });
+
+  // ── Detail sheets ──────────────────────────────────────
+  const MONTHS       = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+  const MONTHS_SHORT = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  const WEEKDAYS     = ['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const hhmm = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+  const dateShort = str => { const d = new Date(str + 'T00:00:00'); return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`; };
+
+  const sheetOverlay = document.getElementById('sheet-overlay');
+  const sheetEl      = sheetOverlay.querySelector('.detail-sheet');
+  const sheetTitleEl = document.getElementById('sheet-title');
+  const sheetBodyEl  = document.getElementById('sheet-body');
+
+  function openSheet(title, html) {
+    sheetTitleEl.textContent = title;
+    sheetBodyEl.innerHTML = html;
+    sheetEl.scrollTop = 0;
+    sheetOverlay.classList.add('open');
+  }
+  function closeSheet() { sheetOverlay.classList.remove('open'); }
+
+  document.getElementById('sheet-close').addEventListener('click', closeSheet);
+  sheetOverlay.addEventListener('click', e => { if (e.target === sheetOverlay) closeSheet(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetOverlay.classList.contains('open')) closeSheet(); });
+
+  // swipe-down on handle to dismiss
+  const sHandle = document.getElementById('sheet-handle');
+  let sy = null;
+  sHandle.addEventListener('touchstart', e => { sy = e.touches[0].clientY; sheetEl.style.transition = 'none'; }, { passive: true });
+  sHandle.addEventListener('touchmove',  e => { if (sy == null) return; const dy = Math.max(0, e.touches[0].clientY - sy); sheetEl.style.transform = `translateX(-50%) translateY(${dy}px)`; }, { passive: true });
+  sHandle.addEventListener('touchend',   e => { if (sy == null) return; const dy = e.changedTouches[0].clientY - sy; sheetEl.style.transition = ''; sheetEl.style.transform = ''; if (dy > 80) closeSheet(); sy = null; }, { passive: true });
+
+  function runsBetween(startStr, endStr) {
+    return wo.filter(w => w.logged_date >= startStr && w.logged_date < endStr)
+             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+  function runRow(w, showDate) {
+    const d = new Date(w.logged_date + 'T00:00:00');
+    const datePart = showDate ? `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · ` : '';
+    return `<div class="run-row">
+      <div class="run-ic"><i class="ti ti-run"></i></div>
+      <div style="flex:1">
+        <div class="run-km">${fmt(Number(w.km))} km</div>
+        <div class="run-meta">${datePart}kl ${hhmm(w.created_at)}</div>
+      </div>
+    </div>`;
+  }
+  const statPill = (v, l) => `<div class="stat-pill"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+
+  // 1) Single day
+  function openDay(i) {
+    const d = addDays(thisMon, i);
+    const ds = ymd(d);
+    const runs = runsBetween(ds, ymd(addDays(d, 1)));
+    const total = runs.reduce((s, w) => s + Number(w.km), 0);
+    const title = `${cap(WEEKDAYS[d.getDay()])} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+    let body;
+    if (!runs.length) {
+      body = `<div class="sheet-empty">Inga pass denna dag</div>`;
+    } else {
+      body = `<div class="sheet-hero">${fmt(total)} <span class="u">km</span></div>
+        <div class="sheet-sub">${runs.length} pass</div>
+        <div class="sheet-sec-lbl">Pass</div>${runs.map(w => runRow(w, false)).join('')}`;
+    }
+    openSheet(title, body);
+  }
+
+  // 2) Week with 5-week comparison
+  function openWeek() {
+    const runs = runsBetween(ymd(thisMon), ymd(nextMon));
+    const total = runs.reduce((s, w) => s + Number(w.km), 0);
+    const avg = runs.length ? total / runs.length : 0;
+    const cols = [];
+    for (let k = 4; k >= 0; k--) {
+      const ws = addDays(thisMon, -7 * k);
+      cols.push({ km: sumKm(wo, ymd(ws), ymd(addDays(ws, 7))), lbl: `${ws.getDate()}/${ws.getMonth()+1}`, cur: k === 0 });
+    }
+    const maxc = Math.max(0.1, ...cols.map(c => c.km));
+    const chart = `<div class="sheet-sec-lbl">Senaste 5 veckorna</div>
+      <div class="cmp-bars">${cols.map(c => {
+        const h = c.km > 0 ? Math.round(12 + (c.km / maxc) * 80) : 4;
+        return `<div class="cmp-col"><div class="cmp-val">${c.km > 0 ? fmt(c.km) : ''}</div><div class="cmp-bar${c.cur ? ' cur' : ''}" style="height:${h}px"></div><div class="cmp-lbl">${c.lbl}</div></div>`;
+      }).join('')}</div>`;
+    const stats = `<div class="stat-pair" style="margin-top:6px">${statPill(runs.length, 'pass denna vecka')}${statPill(fmt(avg) + ' km', 'snitt per pass')}</div>`;
+    const list = `<div class="sheet-sec-lbl">Alla pass</div>` + (runs.length ? runs.map(w => runRow(w, true)).join('') : `<div class="sheet-empty">Inga pass denna vecka</div>`);
+    openSheet('Denna vecka', `<div class="sheet-hero">${fmt(total)} <span class="u">km</span></div><div class="sheet-sub">denna vecka</div>${stats}${chart}${list}`);
+  }
+
+  // 3a) Month
+  function openMonth() {
+    const s = ymd(new Date(Y, M, 1)), e = ymd(new Date(Y, M + 1, 1));
+    const runs = runsBetween(s, e);
+    const total = runs.reduce((a, w) => a + Number(w.km), 0);
+    const avg = runs.length ? total / runs.length : 0;
+    const stats = `<div class="stat-pair" style="margin-top:6px">${statPill(runs.length, 'pass')}${statPill(fmt(avg) + ' km', 'snitt per pass')}</div>`;
+    const list = `<div class="sheet-sec-lbl">Alla pass</div>` + (runs.length ? runs.map(w => runRow(w, true)).join('') : `<div class="sheet-empty">Inga pass denna månad</div>`);
+    openSheet(cap(MONTHS[M]), `<div class="sheet-hero">${fmt(total)} <span class="u">km</span></div><div class="sheet-sub">${MONTHS[M]} ${Y}</div>${stats}${list}`);
+  }
+
+  // 3b) Year with month-by-month chart
+  function openYear() {
+    const months = [];
+    for (let mo = 0; mo < 12; mo++) months.push(sumKm(wo, ymd(new Date(Y, mo, 1)), ymd(new Date(Y, mo + 1, 1))));
+    const total = months.reduce((a, b) => a + b, 0);
+    const runsCount = countRuns(wo, ymd(new Date(Y, 0, 1)), ymd(new Date(Y + 1, 0, 1)));
+    const maxm = Math.max(0.1, ...months);
+    const chart = `<div class="sheet-sec-lbl">Månad för månad</div>
+      <div class="cmp-bars" style="height:120px">${months.map((km, idx) => {
+        const h = km > 0 ? Math.round(8 + (km / maxm) * 92) : 3;
+        return `<div class="cmp-col"><div class="cmp-bar${idx === M ? ' cur' : ''}" style="height:${h}px"></div><div class="cmp-lbl">${MONTHS_SHORT[idx][0].toUpperCase()}</div></div>`;
+      }).join('')}</div>`;
+    const stats = `<div class="stat-pair" style="margin-top:6px">${statPill(runsCount, 'pass i år')}${statPill(fmt(total / 12) + ' km', 'snitt per månad')}</div>`;
+    openSheet(`${Y}`, `<div class="sheet-hero">${fmt(total)} <span class="u">km</span></div><div class="sheet-sub">totalt i år</div>${stats}${chart}`);
+  }
+
+  // 4) Gear / shoe
+  function openGearDetail(item) {
+    const runs = runsBetween(item.purchase_date, tomorrowStr);
+    const used = runs.reduce((a, w) => a + Number(w.km), 0);
+    const maxKm = Number(item.max_km || 800);
+    const ratio = maxKm > 0 ? used / maxKm : 0;
+    const pct = Math.min(100, Math.round(ratio * 100));
+    const warn = ratio > 0.85;
+    const pd = new Date(item.purchase_date + 'T00:00:00');
+    const last = runs.length ? dateShort(runs[0].logged_date) : '–';
+    const head = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+        <div class="gear-icon"><i class="ti ti-shoe"></i></div>
+        <div><div class="gear-name">${item.name}</div><div class="gear-brand">${item.brand || 'Löparskor'}</div></div>
+      </div>`;
+    const stats = `<div class="stat-pair" style="margin-top:6px">${statPill(fmt(used) + ' km', 'total sträcka')}${statPill(maxKm + ' km', 'livslängd')}</div>
+      <div class="stat-pair" style="margin-top:10px">${statPill(`${pd.getDate()} ${MONTHS_SHORT[pd.getMonth()]} ${pd.getFullYear()}`, 'inköpsdatum')}${statPill(last, 'senast använd')}</div>`;
+    const bar = `<div class="prog-track" style="margin-top:16px"><div class="prog-fill${warn ? ' warn' : ''}" style="width:${pct}%"></div></div>
+      <div class="gear-left">${warn ? 'Dags att byta skor snart' : `${fmt(Math.max(0, maxKm - used))} km kvar`}</div>`;
+    const list = `<div class="sheet-sec-lbl">Pass i dessa skor</div>` + (runs.length ? runs.map(w => runRow(w, true)).join('') : `<div class="sheet-empty">Inga pass än</div>`);
+    openSheet(item.name, `${head}${stats}${bar}${list}`);
+  }
+
+  // ── Wire taps ──────────────────────────────────────────
+  document.querySelectorAll('.bar-col').forEach((col, i) => col.addEventListener('click', () => openDay(i)));
+  document.getElementById('week-card').addEventListener('click', openWeek);
+  document.getElementById('period-card').addEventListener('click', e => {
+    if (e.target.closest('#seg')) return;   // toggle taps switch period, not open
+    if (curPeriod === 'manad') openMonth();
+    else if (curPeriod === 'ar') openYear();
+    else openWeek();
+  });
+  const gearRowEl = document.getElementById('gear-row');
+  if (gearRowEl && g) gearRowEl.addEventListener('click', () => openGearDetail(g));
 
   // ── Activity feed ──────────────────────────────────────
   async function refreshFeed() {
