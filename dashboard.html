@@ -250,6 +250,26 @@
     .cmp-bar.cur { background: var(--hood-color); }
     .cmp-val { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.5); }
     .cmp-lbl { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.35); }
+
+    /* ── Mantra hero ────────────────────────────────────── */
+    .mantra-hero { padding: 24px 12px; text-align: center; cursor: pointer; }
+    .mantra-quote {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 22px; font-weight: 500; font-style: italic;
+      color: #fff; line-height: 1.4;
+    }
+    .mantra-hint { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); margin-top: 12px; text-transform: uppercase; letter-spacing: 0.07em; }
+
+    /* ── Stockholm pulse ────────────────────────────────── */
+    .sthlm-line { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.7); line-height: 1.5; margin: 8px 0 14px; }
+    .sthlm-km { font-size: 30px; font-weight: 900; color: var(--hood-color); letter-spacing: -1px; }
+    .sthlm-bar { display: flex; height: 12px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,0.06); gap: 2px; }
+    .seg-piece { height: 100%; min-width: 2px; }
+    .seg-piece.leader { animation: sthlmPulse 2s ease-in-out infinite; }
+    @keyframes sthlmPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* ── Daily tip ──────────────────────────────────────── */
+    .tip-text { font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.55; margin-top: 8px; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -333,6 +353,99 @@ function floatKmUp(km, color) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 1400);
 }
+const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// ── Rotating motivational quotes (changes daily) ─────────
+const QUOTES = [
+  'Det handlar inte om hur snabbt du springer, utan att du fortsätter.',
+  'Varje steg räknas — även de långsamma.',
+  'The miracle is not that I finished. The miracle is that I had the courage to start. — John Bingham',
+  'Spring för att du kan. Många kan inte.',
+  'Din enda konkurrent är den du var igår.',
+  'Run when you can, walk if you have to, crawl if you must — just never give up. — Dean Karnazes',
+  'Det gör ont nu, men en dag blir det din uppvärmning.',
+  'Stockholm vaknar tidigt — var där ute med staden.',
+  'Pain is temporary. Quitting lasts forever. — Lance Armstrong',
+  'Det finns inget dåligt väder, bara dåliga ursäkter.',
+  'Spring inte bort från något — spring mot något.',
+  'En löprunda har aldrig ångrats efteråt.',
+  'Benen springer, men det är huvudet som bestämmer.',
+  'Some people want it to happen, some wish it would happen, others make it happen. — Michael Jordan',
+  'Långsamt är fortfarande framåt.',
+  'Du blir aldrig ångerfull över passet du faktiskt sprang.',
+  'Spring genom Stockholm, inte förbi det.',
+  'The body achieves what the mind believes.',
+  'Det svåraste steget är det första ut genom dörren.',
+  'Träna för att fira vad kroppen kan, inte straffa den.',
+  'Vila är en del av träningen, inte en paus från den.',
+  'If it does not challenge you, it will not change you.',
+  'Mät inte din runda i kilometer, mät den i hur du mår efteråt.',
+  'Spring lugnt idag så orkar du springa imorgon också.',
+  'En dålig löprunda är fortfarande bättre än ingen löprunda.',
+  'Drömmar springs ikapp ett steg i taget.',
+  'Sätt målet högt — och spring dit.',
+  'Det är bara du och vägen. Resten är brus.',
+  'Disciplin är att springa även när motivationen sover.',
+  'Today I will do what others will not, so tomorrow I can do what others cannot.',
+  'Andas in Stockholm, andas ut stress.',
+  'Du är starkare än din bekvämaste ursäkt.',
+];
+
+// ── Rotating daily tips (changes daily) ──────────────────
+const TIPS = [
+  'Drick vatten ett par timmar innan du springer för bäst prestation.',
+  'Vila är när musklerna växer — överträna inte.',
+  'Spring i samma sko hela passet — byt aldrig mid-run.',
+  'Värm upp 5–10 minuter med lätt jogg innan du ökar tempot.',
+  'Byt löparskor efter 600–800 km för att skydda knäna.',
+  'Andas med magen, inte bara bröstet, för jämnare syresättning.',
+  'Spring långa pass i samtalstempo — du ska kunna prata.',
+  'Öka veckodistansen med max 10 procent i taget.',
+  'Stretcha lätt efter passet medan musklerna är varma.',
+  'Sömn är din bästa återhämtning — sikta på 7–9 timmar.',
+  'Ät kolhydrater 1–3 timmar före ett långpass.',
+  'Spring i Hagaparken eller längs Djurgården för mjukare underlag.',
+  'Reflexväst på vintern — Stockholm är mörkt halva året.',
+  'Intervaller en gång i veckan höjer din maxkapacitet.',
+  'Lyssna på kroppen: vassa smärtor betyder stopp, inte push.',
+  'En vilodag i veckan gör dig snabbare, inte långsammare.',
+  'Spring uppför för styrka, nedför för teknik.',
+  'Fyll på salt och vätska efter svettiga sommarpass.',
+  'Korta steg och högre stegfrekvens skonar lederna.',
+  'Ät något med protein inom 30 minuter efter passet.',
+  'Spring längs Riddarfjärden vid soluppgång — magiskt och stilla.',
+  'Ny på löpning? Varva gång och löpning de första veckorna.',
+  'Kalla vinterpass: klä dig som om det vore 10 grader varmare.',
+  'Variera underlaget — asfalt, grus och stig tränar olika muskler.',
+  'Musik med 160–180 bpm hjälper dig hålla stegfrekvensen.',
+  'Drick inte för mycket precis innan — det ger håll i sidan.',
+  'Långsam jogg dagen efter ett hårt pass snabbar på återhämtningen.',
+  'Spring aldrig genom skarp smärta i knä eller hälsena.',
+  'Stockholm har över 200 km löpspår — utforska ett nytt varje vecka.',
+  'Koffein 30–60 minuter före kan förbättra uthålligheten.',
+  'Lägg fram kläderna kvällen innan — färre ursäkter på morgonen.',
+  'Bål- och rumpstyrka förebygger de vanligaste löparskadorna.',
+  'Spring med vinden i ryggen på vägen hem när du är trött.',
+  'En negativ split — snabbare andra halvan — känns alltid starkare.',
+  'Smörj in fötterna eller använd dubbla strumpor mot skavsår.',
+  'Spring runt Brunnsviken — ungefär en mil runt sjön.',
+  'Lägg in en lugn återhämtningsvecka var fjärde vecka.',
+  'Frukt och vatten räcker som bränsle för pass under en timme.',
+  'Håll axlarna avslappnade och händerna lösa, inte knutna.',
+  'Ett tempopass i veckan lär kroppen springa snabbt längre.',
+  'Värm upp lederna extra noga när det är kallt ute.',
+  'Spring med en kompis ibland — det gör långpassen kortare.',
+  'Byt riktning på din vanliga runda för ny motivation.',
+  'Hälsenor gillar gradvis belastning — hoppa aldrig över uppvärmningen.',
+  'Spring längs Årstaviken för platt och snabbt underlag.',
+  'Logga dina pass — framsteg du ser blir framsteg du fortsätter med.',
+  'Vänta med kaffet tills pulsen lugnat sig efter passet.',
+  'Andningsteknik 3:2 — in tre steg, ut två — hjälper i uppförsbackar.',
+  'Nya skor? Spring in dem på korta pass först.',
+  'Isgata ute? Spring inomhus på band istället för att riskera fall.',
+  'Sätt ett litet delmål varje vecka — då känns det stora målet nära.',
+  'En kall nedvarvning och stretch minskar träningsvärken imorgon.',
+];
 
 (async () => {
   const user = await requireAuth();
@@ -436,11 +549,28 @@ function floatKmUp(km, color) {
       <div class="gear-empty">
         <div class="gear-empty-icon"><i class="ti ti-shoe"></i></div>
         <div class="gear-empty-txt">Inga skor tillagda än</div>
-        <a href="profile.html" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex">
+        <a href="profile.html#skor" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex">
           <i class="ti ti-plus"></i> Lägg till skor
         </a>
       </div>`;
   }
+
+  // ── Motivational content (rotates daily by day-of-year) ─
+  const dayOfYear = Math.floor((today - new Date(Y, 0, 0)) / 86400000);
+  const mantra = (profile.mantra || '').trim();
+  const quoteText  = mantra || QUOTES[dayOfYear % QUOTES.length];
+  const mantraHint = mantra ? 'Tryck för att ändra ditt mantra' : 'Tryck för att skriva ditt eget mantra';
+  const dailyTip   = TIPS[dayOfYear % TIPS.length];
+
+  // ── Stockholm pulse ────────────────────────────────────
+  const sthlmTotal = lb.reduce((s, e) => s + Number(e.total_km || 0), 0);
+  const leaderId   = (lb.length && Number(lb[0].total_km || 0) > 0) ? lb[0].id : null;
+  const sthlmSegs  = sthlmTotal > 0 ? lb.map(e => {
+    const w = Number(e.total_km || 0) / sthlmTotal * 100;
+    if (w <= 0) return '';
+    const color = e.color || (NEIGHBOURHOODS.find(n => n.id === e.id)?.color) || '#888780';
+    return `<div class="seg-piece${e.id === leaderId ? ' leader' : ''}" style="width:${w}%;background:${color}"></div>`;
+  }).join('') : '';
 
   // ── Render ─────────────────────────────────────────────
   document.getElementById('content').innerHTML = `
@@ -455,6 +585,12 @@ function floatKmUp(km, color) {
     </div>
 
     <div class="dash-content">
+
+      <!-- Mantra / daily quote -->
+      <div class="mantra-hero" id="mantra-hero">
+        <div class="mantra-quote">“${esc(quoteText)}”</div>
+        <div class="mantra-hint">${mantraHint}</div>
+      </div>
 
       <!-- Weekly stats hero -->
       <div class="d-card tappable" id="week-card">
@@ -503,6 +639,13 @@ function floatKmUp(km, color) {
         </div>
       </div>
 
+      <!-- Stockholm pulse -->
+      <div class="d-card tappable" id="sthlm-pulse" onclick="location.href='leaderboard.html'">
+        <div class="d-lbl">Stockholm denna vecka</div>
+        <div class="sthlm-line">Stockholm har sprungit <span class="sthlm-km" id="sthlm-km">0,0</span> km denna vecka</div>
+        <div class="sthlm-bar">${sthlmSegs || '<div style="flex:1"></div>'}</div>
+      </div>
+
       <!-- Mini map widget -->
       <div class="mini-map-wrap" onclick="location.href='leaderboard.html'">
         <div id="mini-map"></div>
@@ -534,6 +677,12 @@ function floatKmUp(km, color) {
         <div class="strava-soon"><i class="ti ti-brand-strava"></i><span>Strava — coming soon 🚀</span></div>
       </div>
 
+      <!-- Daily tip -->
+      <div class="d-card">
+        <div class="d-lbl" style="display:flex;align-items:center;gap:6px"><i class="ti ti-bulb" style="color:var(--hood-color);font-size:14px"></i> Dagens tips</div>
+        <div class="tip-text">${dailyTip}</div>
+      </div>
+
       <!-- Activity feed (hidden until there are real workouts) -->
       <div id="feed-section" style="display:none">
         <div class="d-lbl" style="margin:0 4px 8px">Senaste aktivitet</div>
@@ -544,6 +693,21 @@ function floatKmUp(km, color) {
 
     </div>
   `;
+
+  // ── Mantra tap → edit ──────────────────────────────────
+  document.getElementById('mantra-hero').addEventListener('click', () => { location.href = 'profile.html#mantra'; });
+
+  // ── Stockholm count-up ─────────────────────────────────
+  const skmEl = document.getElementById('sthlm-km');
+  if (skmEl) {
+    const start = performance.now();
+    (function step(now) {
+      const p = Math.min((now - start) / 1100, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      skmEl.textContent = fmt(sthlmTotal * eased);
+      if (p < 1) requestAnimationFrame(step);
+    })(performance.now());
+  }
 
   // ── Time filter behaviour ──────────────────────────────
   let curPeriod = 'vecka';

@@ -381,7 +381,7 @@ const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       </div>
 
       <!-- 1. MINA SKOR -->
-      <div class="sec-title"><i class="ti ti-shoe"></i> Mina skor</div>
+      <div class="sec-title" id="skor"><i class="ti ti-shoe"></i> Mina skor</div>
       ${gearHtml}
 
       <!-- 2. LOPP JAG SIKTAR PÅ -->
@@ -389,7 +389,7 @@ const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       ${racesHtml}
 
       <!-- 3. MITT MANTRA -->
-      <div class="sec-title"><i class="ti ti-quote"></i> Mitt mantra</div>
+      <div class="sec-title" id="mantra"><i class="ti ti-quote"></i> Mitt mantra</div>
       <div class="card">
         <input type="text" class="input" id="mantra-input" maxlength="120" placeholder="Skriv ditt motto…" value="${esc(profile.mantra||'')}" />
         <button class="btn btn-primary" id="mantra-save" style="margin-top:10px"><i class="ti ti-check"></i> Spara mantra</button>
@@ -532,6 +532,12 @@ const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
   mHandle.addEventListener('touchstart', e => { my = e.touches[0].clientY; modalSheet.style.transition = 'none'; }, { passive: true });
   mHandle.addEventListener('touchmove',  e => { if (my == null) return; const dy = Math.max(0, e.touches[0].clientY - my); modalSheet.style.transform = `translateX(-50%) translateY(${dy}px)`; }, { passive: true });
   mHandle.addEventListener('touchend',   e => { if (my == null) return; const dy = e.changedTouches[0].clientY - my; modalSheet.style.transition = ''; modalSheet.style.transform = ''; if (dy > 80) closeModal(); my = null; }, { passive: true });
+
+  // ── Smooth-scroll to anchor (e.g. #skor, #mantra) ───────
+  if (location.hash) {
+    const target = document.querySelector(location.hash);
+    if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  }
 
   function openGearModal(item) {
     const isEdit = !!item;
