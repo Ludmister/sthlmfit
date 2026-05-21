@@ -111,8 +111,8 @@
   </div>
   <div class="map-stat-grid" id="stat-grid"></div>
 
-  <!-- Manual log widget — always visible when Strava not connected -->
-  <div id="log-widget" style="display:none;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08)">
+  <!-- Log widget — always visible -->
+  <div id="log-widget" style="padding-top:14px;border-top:1px solid rgba(255,255,255,0.08)">
     <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px">Logga ditt löppass</div>
     <div style="display:flex;gap:8px;align-items:stretch">
       <div style="position:relative;flex:1">
@@ -120,25 +120,22 @@
           style="width:100%;box-sizing:border-box;padding:10px 40px 10px 14px;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:28px;font-weight:900;font-family:var(--font);outline:none;-webkit-appearance:none;appearance:none" />
         <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:600;color:rgba(255,255,255,0.35);pointer-events:none">km</span>
       </div>
-      <button id="dash-log-btn" style="padding:0 20px;background:var(--hood-color);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:var(--font);cursor:pointer;flex-shrink:0">
+      <button id="dash-log-btn" style="padding:0 20px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:var(--font);cursor:pointer;flex-shrink:0">
         Logga
       </button>
     </div>
     <div id="dash-log-msg" style="margin-top:7px;font-size:12px;min-height:16px"></div>
-    <div style="margin-top:4px;font-size:12px;color:rgba(255,255,255,0.28)">
-      <a href="profile.html" style="color:rgba(255,255,255,0.38);text-decoration:underline;text-underline-offset:2px">Koppla Strava</a> för automatisk synkning
+  </div>
+
+  <!-- Strava badge — always visible -->
+  <div style="padding-top:10px;display:flex">
+    <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:rgba(252,76,2,0.10);border:1px solid rgba(252,76,2,0.25);border-radius:99px;pointer-events:none;user-select:none">
+      <i class="ti ti-brand-strava" style="font-size:13px;color:#FC4C02"></i>
+      <span style="font-size:12px;font-weight:600;color:#FC4C02;letter-spacing:0.01em">Strava sync — coming soon 🚀</span>
     </div>
   </div>
 
   <div id="sheet-extra">
-    <!-- Strava coming-soon badge -->
-    <div style="padding-top:10px;display:flex">
-      <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:rgba(252,76,2,0.10);border:1px solid rgba(252,76,2,0.25);border-radius:99px;pointer-events:none;user-select:none">
-        <i class="ti ti-brand-strava" style="font-size:13px;color:#FC4C02"></i>
-        <span style="font-size:12px;font-weight:600;color:#FC4C02;letter-spacing:0.01em">Strava sync — coming soon 🚀</span>
-      </div>
-    </div>
-
     <!-- Activity feed -->
     <div id="feed-wrap" style="display:none;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07)">
       <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">Senaste aktivitet</div>
@@ -363,8 +360,6 @@ function timeAgo(ts) {
       banner.classList.remove('visible');
     }
 
-    document.getElementById('log-widget').style.display =
-      profile.strava_connected ? 'none' : 'block';
 
     document.getElementById('bottom-card').style.display = 'block';
     document.getElementById('loading').classList.add('hidden');
