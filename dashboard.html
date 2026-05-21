@@ -108,14 +108,43 @@
       font-size: 12px; font-weight: 700; color: #fff;
     }
     .map-rank-pill .ti { font-size: 14px; color: var(--gold); }
-    .map-go {
+    .map-expand {
       position: absolute; right: 10px; top: 10px; z-index: 500;
-      width: 26px; height: 26px; border-radius: 50%;
-      background: rgba(10,22,36,0.9); border: 1px solid rgba(255,255,255,0.12);
-      display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.7);
+      width: 30px; height: 30px; border-radius: 8px; padding: 0;
+      background: rgba(10,22,36,0.9); border: 1px solid rgba(255,255,255,0.14);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.85); cursor: pointer; font-family: var(--font);
     }
-    .map-go .ti { font-size: 15px; }
+    .map-expand .ti { font-size: 16px; }
+    .map-expand:active { transform: scale(0.92); }
     .leaflet-container { font-family: 'Inter', sans-serif !important; background: #0D1B2A !important; }
+
+    /* ── Fullscreen map overlay ─────────────────────────── */
+    #map-overlay {
+      position: fixed; inset: 0; z-index: 1000; background: #0D1B2A;
+      opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+    }
+    #map-overlay.open { opacity: 1; visibility: visible; }
+    #full-map { width: 100%; height: 100%; }
+    #map-close {
+      position: fixed; top: calc(14px + env(safe-area-inset-top)); right: 14px; z-index: 1001;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(10,22,36,0.92); border: 1px solid rgba(255,255,255,0.14);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-family: var(--font);
+    }
+    #map-close .ti { font-size: 22px; }
+    #map-close:active { transform: scale(0.94); }
+
+    /* ── Strava coming-soon badge ───────────────────────── */
+    .strava-soon {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 99px;
+      background: rgba(252,76,2,0.12); opacity: 0.5;
+      pointer-events: none; user-select: none;
+    }
+    .strava-soon .ti { font-size: 13px; color: #FC4C02; }
+    .strava-soon span { font-size: 11px; font-weight: 600; color: #FC4C02; }
 
     /* ── Gear ───────────────────────────────────────────── */
     .gear-row { display: flex; align-items: center; gap: 12px; }
@@ -177,6 +206,12 @@
       <i class="ti ti-user"></i>Profil
     </button>
   </nav>
+</div>
+
+<!-- Fullscreen interactive map overlay -->
+<div id="map-overlay">
+  <div id="full-map"></div>
+  <button id="map-close" aria-label="Stäng karta"><i class="ti ti-x"></i></button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -399,7 +434,7 @@ function floatKmUp(km, color) {
       <div class="mini-map-wrap" onclick="location.href='leaderboard.html'">
         <div id="mini-map"></div>
         <div class="map-rank-pill"><i class="ti ti-trophy"></i>#${myRank || '–'} ${myNhName}</div>
-        <div class="map-go"><i class="ti ti-chevron-right"></i></div>
+        <button class="map-expand" id="map-expand" aria-label="Förstora karta"><i class="ti ti-arrows-maximize"></i></button>
       </div>
 
       <!-- Gear tracker -->
@@ -421,8 +456,13 @@ function floatKmUp(km, color) {
         <div id="dash-log-msg" style="margin-top:8px;font-size:12px;min-height:16px"></div>
       </div>
 
-      <!-- Activity feed -->
-      <div>
+      <!-- Strava coming-soon badge -->
+      <div style="display:flex;justify-content:flex-end">
+        <div class="strava-soon"><i class="ti ti-brand-strava"></i><span>Strava — coming soon 🚀</span></div>
+      </div>
+
+      <!-- Activity feed (hidden until there are real workouts) -->
+      <div id="feed-section" style="display:none">
         <div class="d-lbl" style="margin:0 4px 8px">Senaste aktivitet</div>
         <div class="d-card" style="padding:6px 16px">
           <div id="feed-list"></div>
@@ -468,6 +508,48 @@ function floatKmUp(km, color) {
     setTimeout(() => miniMap.invalidateSize(), 120);
   }
 
+  // ── Fullscreen interactive map ─────────────────────────
+  const overlay = document.getElementById('map-overlay');
+  let fullMap = null;
+  function buildFullMap() {
+    fullMap = L.map('full-map', { zoomControl: true, attributionControl: true })
+      .setView([59.3293, 18.0686], 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 16, attribution: '&copy; OpenStreetMap &copy; CartoDB',
+    }).addTo(fullMap);
+
+    const fg = L.featureGroup();
+    if (geoRes) geoRes.features.forEach(f => {
+      const nb = NEIGHBOURHOODS.find(n => n.id === f.properties.id);
+      if (!nb) return;
+      const isMine = f.properties.id === myNhId;
+      const row    = lb.find(e => e.id === f.properties.id);
+      const rank   = lb.findIndex(e => e.id === f.properties.id) + 1;
+      const layer = L.geoJSON(f, { style: {
+        fillColor: nb.color, fillOpacity: isMine ? 0.4 : 0.12,
+        color: nb.color, weight: isMine ? 3 : 1.5, opacity: isMine ? 1 : 0.6,
+      }}).addTo(fg);
+      layer.bindPopup(
+        `<div class="map-popup-name">${nb.name}</div>` +
+        `<div class="map-popup-km">${fmt(row?.total_km || 0)} km</div>` +
+        `<div class="map-popup-rank">#${rank || '–'} denna vecka</div>`,
+        { maxWidth: 190 });
+    });
+    fg.addTo(fullMap);
+    try { fullMap.fitBounds(fg.getBounds(), { padding: [24, 24] }); } catch(e) {}
+  }
+
+  const expandBtn = document.getElementById('map-expand');
+  if (expandBtn) expandBtn.addEventListener('click', e => {
+    e.stopPropagation();            // don't trigger the widget → leaderboard nav
+    overlay.classList.add('open');
+    if (!fullMap) buildFullMap();
+    setTimeout(() => fullMap.invalidateSize(), 320);
+  });
+  document.getElementById('map-close').addEventListener('click', () => {
+    overlay.classList.remove('open');
+  });
+
   // ── Activity feed ──────────────────────────────────────
   async function refreshFeed() {
     const { data } = await sb
@@ -477,25 +559,24 @@ function floatKmUp(km, color) {
       .limit(6);
 
     const items = (data || []).filter(w => w.profiles?.neighbourhoods);
-    const PLACEHOLDERS = [
-      { nhName: 'Södermalm', color: '#378ADD', km: 4.2, ts: new Date(Date.now() - 480000) },
-      { nhName: 'Vasastan',  color: '#639922', km: 7.8, ts: new Date(Date.now() - 1920000) },
-      { nhName: 'Östermalm', color: '#BA7517', km: 3.1, ts: new Date(Date.now() - 3660000) },
-    ];
-    const rows = items.length > 0
-      ? items.map(w => ({ nhName: w.profiles.neighbourhoods.name, color: w.profiles.neighbourhoods.color, km: Number(w.km), ago: timeAgo(w.created_at) }))
-      : PLACEHOLDERS.map(p => ({ ...p, ago: timeAgo(p.ts) }));
-
+    const section  = document.getElementById('feed-section');
     const feedList = document.getElementById('feed-list');
-    if (!feedList) return;
-    feedList.innerHTML = rows.map((r, i) => `
+    if (!feedList || !section) return;
+
+    if (items.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+
+    feedList.innerHTML = items.map((w, i) => {
+      const nh = w.profiles.neighbourhoods;
+      return `
       <div class="feed-row" style="animation-delay:${i * 0.06}s">
-        <div class="feed-dot" style="background:${r.color}"></div>
+        <div class="feed-dot" style="background:${nh.color}"></div>
         <div class="feed-txt">
-          Någon i <span style="color:${r.color};font-weight:700">${r.nhName}</span> loggade ${fmt(r.km)} km
-          <span style="color:rgba(255,255,255,0.3);margin-left:2px">${r.ago}</span>
+          Någon i <span style="color:${nh.color};font-weight:700">${nh.name}</span> loggade ${fmt(Number(w.km))} km
+          <span style="color:rgba(255,255,255,0.3);margin-left:2px">${timeAgo(w.created_at)}</span>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
   await refreshFeed();
 
