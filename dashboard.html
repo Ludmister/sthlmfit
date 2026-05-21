@@ -7,149 +7,209 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0D1B2A; }
-    #map { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
-    .leaflet-container { font-family: 'Inter', sans-serif !important; width: 100% !important; height: 100% !important; }
-    .leaflet-popup-content-wrapper {
-      background: rgba(13,27,42,0.95);
-      color: #fff;
-      border-radius: 14px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-      border: 1px solid rgba(255,255,255,0.12);
-      backdrop-filter: blur(12px);
-    }
-    .leaflet-popup-tip { background: rgba(13,27,42,0.95); }
-    .leaflet-popup-close-button { color: rgba(255,255,255,0.5) !important; font-size: 18px !important; }
-    .map-popup-name  { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 4px; }
-    .map-popup-km    { font-size: 22px; font-weight: 900; color: var(--green); line-height: 1; }
-    .map-popup-rank  { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 3px; font-weight: 600; }
-    .map-popup-sub   { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 1px; }
-    #loading {
-      position: fixed; inset: 0; background: var(--navy);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 200; transition: opacity 0.4s;
-    }
-    #loading.hidden { opacity: 0; pointer-events: none; }
-    .card-handle {
-      width: 36px; height: 4px;
-      background: rgba(255,255,255,0.22);
-      border-radius: 99px;
-      margin: 0 auto 18px;
-    }
-    @keyframes floatUp {
-      0%   { opacity:1; transform:translateX(-50%) translateY(0); }
-      100% { opacity:0; transform:translateX(-50%) translateY(-64px); }
-    }
-    @keyframes feedIn {
-      from { opacity:0; transform:translateY(5px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
-    .feed-row { opacity:0; animation:feedIn 0.35s ease forwards; }
+    body { background: #0D1B2A; }
+    .screen { background: #0D1B2A; min-height: 100vh; min-height: 100dvh; }
 
-    /* ── Bottom sheet ─────────────────────────────────────── */
-    /* Override .map-bottom-card so the card is truly fixed   */
-    #bottom-card {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 110;
+    /* ── Header ─────────────────────────────────────────── */
+    .dash-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: calc(18px + env(safe-area-inset-top)) 16px 14px;
     }
-    /* Collapsed: stat-grid needs no bottom margin            */
-    #bottom-card .map-stat-grid { margin-bottom: 0; }
-    /* Hidden section — max-height:0 clips everything inside */
-    #sheet-extra {
-      overflow: hidden;
-      max-height: 0;
-      transition: max-height 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    .dash-greeting { font-size: 21px; font-weight: 800; color: #fff; line-height: 1.2; letter-spacing: -0.3px; }
+    .nh-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 8px; padding: 4px 11px;
+      background: rgba(var(--hood-rgb),0.15);
+      border: 1px solid var(--hood-color);
+      border-radius: 99px; font-size: 11px; font-weight: 700;
+      color: var(--hood-color); letter-spacing: 0.01em;
     }
-    #bottom-card.expanded #sheet-extra { max-height: 600px; }
-    /* Handle tap target                                       */
-    #drag-handle {
-      cursor: pointer;
-      padding: 10px 0 6px;
-      margin-top: -10px;
-      touch-action: manipulation;
+    .nh-pill-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--hood-color); }
+    .header-btn {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-family: var(--font);
     }
+    .header-btn .ti { font-size: 19px; }
+    .header-btn:active { transform: scale(0.94); }
+
+    /* ── Content scroll area ────────────────────────────── */
+    .dash-content {
+      padding: 0 16px calc(var(--nav-h) + 24px);
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    /* ── Card (dark) ────────────────────────────────────── */
+    .d-card {
+      background: var(--navy-mid);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 16px 20px;
+    }
+    .d-lbl {
+      font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    /* ── Weekly hero ────────────────────────────────────── */
+    .hero-num {
+      font-size: 48px; font-weight: 900; color: var(--hood-color);
+      line-height: 1; letter-spacing: -2px; margin: 8px 0 2px;
+    }
+    .hero-unit { font-size: 22px; font-weight: 800; color: rgba(255,255,255,0.35); letter-spacing: -1px; }
+    .hero-cmp { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.6); }
+    .delta {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 3px 9px; border-radius: 99px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.01em;
+    }
+    .delta .ti { font-size: 13px; }
+    .delta.up   { background: rgba(74,222,128,0.12);  color: #4ADE80; }
+    .delta.down { background: rgba(248,113,113,0.12); color: #F87171; }
+    .delta.flat { background: rgba(255,255,255,0.06);  color: rgba(255,255,255,0.4); }
+
+    /* ── Week bar chart ─────────────────────────────────── */
+    .bars { display: flex; align-items: flex-end; gap: 4px; height: 72px; margin-top: 4px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+    .bar {
+      width: 100%; border-radius: 5px 5px 2px 2px;
+      background: rgba(29,158,117,0.3);
+      transition: height 0.4s ease-out;
+    }
+    .bar.today { background: var(--hood-color); }
+    .bar-lbl { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35); }
+    .bar-col.is-today .bar-lbl { color: var(--hood-color); }
+
+    /* ── Segmented time filter ──────────────────────────── */
+    .seg {
+      display: flex; gap: 2px; padding: 3px;
+      background: rgba(255,255,255,0.06); border-radius: 10px;
+    }
+    .seg-btn {
+      flex: 1; padding: 8px 0; border: none; background: none; cursor: pointer;
+      font-family: var(--font); font-size: 13px; font-weight: 700;
+      color: rgba(255,255,255,0.5); border-radius: 8px; transition: all 0.15s;
+    }
+    .seg-btn.active { background: var(--navy); border: 1px solid rgba(255,255,255,0.12); color: #fff; }
+
+    /* ── Mini map ───────────────────────────────────────── */
+    .mini-map-wrap {
+      position: relative; height: 120px; border-radius: 12px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08); cursor: pointer;
+    }
+    #mini-map { width: 100%; height: 100%; background: #0D1B2A; }
+    .map-rank-pill {
+      position: absolute; left: 10px; bottom: 10px; z-index: 500;
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border-radius: 99px;
+      background: rgba(10,22,36,0.9); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 12px; font-weight: 700; color: #fff;
+    }
+    .map-rank-pill .ti { font-size: 14px; color: var(--gold); }
+    .map-go {
+      position: absolute; right: 10px; top: 10px; z-index: 500;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(10,22,36,0.9); border: 1px solid rgba(255,255,255,0.12);
+      display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.7);
+    }
+    .map-go .ti { font-size: 15px; }
+    .leaflet-container { font-family: 'Inter', sans-serif !important; background: #0D1B2A !important; }
+
+    /* ── Gear ───────────────────────────────────────────── */
+    .gear-row { display: flex; align-items: center; gap: 12px; }
+    .gear-icon {
+      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+      background: rgba(var(--hood-rgb),0.12);
+      display: flex; align-items: center; justify-content: center; color: var(--hood-color);
+    }
+    .gear-icon .ti { font-size: 22px; }
+    .gear-name { font-size: 15px; font-weight: 700; color: #fff; }
+    .gear-brand { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.4); margin-top: 1px; }
+    .gear-km { font-size: 13px; font-weight: 800; color: #fff; text-align: right; white-space: nowrap; }
+    .gear-km-max { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.35); }
+    .prog-track { height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; margin-top: 12px; }
+    .prog-fill { height: 100%; background: var(--green); border-radius: 99px; }
+    .prog-fill.warn { background: #F87171; }
+    .gear-left { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); margin-top: 7px; }
+    .gear-empty { text-align: center; padding: 6px 0 2px; }
+    .gear-empty-icon { font-size: 30px; color: rgba(255,255,255,0.2); }
+    .gear-empty-txt { font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 500; margin: 6px 0 12px; }
+
+    /* ── Log ────────────────────────────────────────────── */
+    .log-input {
+      width: 100%; box-sizing: border-box; padding: 12px 44px 12px 15px;
+      background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 12px; color: #fff; font-size: 28px; font-weight: 900;
+      font-family: var(--font); outline: none; -webkit-appearance: none; appearance: none;
+    }
+    .log-input:focus { border-color: var(--hood-color); }
+    .log-unit { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.35); pointer-events: none; }
+
+    /* ── Activity feed ──────────────────────────────────── */
+    .feed-row { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid rgba(255,255,255,0.05); opacity: 0; animation: feedIn 0.35s ease forwards; }
+    .feed-row:last-child { border-bottom: none; }
+    .feed-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+    .feed-txt { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5; }
+    @keyframes feedIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes floatUp {
+      0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-64px); }
+    }
+
+    /* ── Bottom nav ─────────────────────────────────────── */
+    .bottom-nav { background: #111E2D !important; border-top-color: rgba(255,255,255,0.07) !important; }
+    .nav-tab { color: rgba(255,255,255,0.38) !important; }
+    .nav-tab.active { color: var(--hood-color) !important; }
+    .spinner { border-color: rgba(255,255,255,0.08); border-top-color: var(--hood-color); }
   </style>
 </head>
 <body>
+<div class="screen">
+  <div id="content"><div class="spinner" style="margin:80px auto"></div></div>
 
-<div id="map"></div>
-
-<div id="loading">
-  <div style="text-align:center">
-    <div class="wordmark" style="margin-bottom:24px">Sthlm<span>Fit</span></div>
-    <div class="spinner" style="margin:0 auto"></div>
-  </div>
-</div>
-
-<div class="map-ui">
-
-  <button class="map-btn" onclick="location.href='profile.html'"
-    style="top:calc(16px + env(safe-area-inset-top)); left:16px">
-    <i class="ti ti-user"></i>
-  </button>
-
-  <button class="map-btn" onclick="location.href='leaderboard.html'"
-    style="top:calc(16px + env(safe-area-inset-top)); right:16px">
-    <i class="ti ti-trophy"></i>
-  </button>
-
-  <!-- Personal greeting — fades out after 4s -->
-  <div id="greeting" style="position:fixed;top:calc(64px + env(safe-area-inset-top));left:12px;right:12px;z-index:90;pointer-events:none;opacity:0;transition:opacity 0.5s ease">
-    <div id="greeting-text" style="background:rgba(10,22,36,0.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:9px 16px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.9);text-align:center"></div>
-  </div>
-
-
-</div>
-
-<!-- Bottom sheet — outside .map-ui so position:fixed is relative to viewport -->
-<div class="map-bottom-card" id="bottom-card" style="display:none">
-  <div class="card-handle" id="drag-handle"></div>
-  <div class="attack-banner" id="attack-banner" onclick="location.href='leaderboard.html'">
-    <i class="ti ti-alert-triangle"></i>
-    <span id="attack-text"></span>
-  </div>
-  <div class="map-stat-grid" id="stat-grid"></div>
-
-  <!-- Log widget — always visible -->
-  <div id="log-widget" style="padding-top:14px;border-top:1px solid rgba(255,255,255,0.08)">
-    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px">Logga ditt löppass</div>
-    <div style="display:flex;gap:8px;align-items:stretch">
-      <div style="position:relative;flex:1">
-        <input type="number" id="dash-km" min="0.1" max="100" step="0.1" inputmode="decimal" placeholder="0"
-          style="width:100%;box-sizing:border-box;padding:10px 40px 10px 14px;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:28px;font-weight:900;font-family:var(--font);outline:none;-webkit-appearance:none;appearance:none" />
-        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:600;color:rgba(255,255,255,0.35);pointer-events:none">km</span>
-      </div>
-      <button id="dash-log-btn" style="padding:0 20px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:var(--font);cursor:pointer;flex-shrink:0">
-        Logga
-      </button>
-    </div>
-    <div id="dash-log-msg" style="margin-top:7px;font-size:12px;min-height:16px"></div>
-  </div>
-
-  <div id="sheet-extra">
-    <!-- Activity feed -->
-    <div id="feed-wrap" style="display:none;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07)">
-      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">Senaste aktivitet</div>
-      <div id="feed-list"></div>
-    </div>
-  </div>
+  <nav class="bottom-nav" style="grid-template-columns:1fr 1fr">
+    <button class="nav-tab active">
+      <i class="ti ti-home"></i>Hem
+    </button>
+    <button class="nav-tab" onclick="location.href='profile.html'">
+      <i class="ti ti-user"></i>Profil
+    </button>
+  </nav>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
 <script>
-let GEO = null;
+// ── Date helpers ──────────────────────────────────────────
+function ymd(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function mondayOf(d) { const x = new Date(d); const day = x.getDay(); x.setDate(x.getDate() - (day === 0 ? 6 : day - 1)); x.setHours(0,0,0,0); return x; }
+function sumKm(list, startStr, endStr) { return list.filter(w => w.logged_date >= startStr && w.logged_date < endStr).reduce((s,w) => s + Number(w.km), 0); }
+function countRuns(list, startStr, endStr) { return list.filter(w => w.logged_date >= startStr && w.logged_date < endStr).length; }
+function fmt(km) { return Number(km).toFixed(1).replace('.', ','); }
 
-function kmOpacity(km) {
-  if (!km || km <= 0) return 0.30;
-  if (km <= 15)       return 0.50;
-  if (km <= 40)       return 0.68;
-  if (km <= 80)       return 0.84;
-  return 0.95;
+function timeAgo(ts) {
+  const m = Math.floor((Date.now() - new Date(ts)) / 60000);
+  if (m < 1)  return 'just nu';
+  if (m < 60) return m + ' min sedan';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h sedan';
+  return Math.floor(h / 24) + 'd sedan';
 }
 
+function deltaBadge(cur, prev) {
+  if (prev <= 0 && cur <= 0) return { txt: '—', cls: 'flat', icon: 'ti-minus' };
+  if (prev <= 0 && cur > 0)  return { txt: 'Nytt!', cls: 'up', icon: 'ti-trending-up' };
+  const p = Math.round((cur - prev) / prev * 100);
+  if (p > 0) return { txt: '+' + p + '%', cls: 'up',   icon: 'ti-trending-up' };
+  if (p < 0) return { txt: p + '%',       cls: 'down', icon: 'ti-trending-down' };
+  return { txt: '0%', cls: 'flat', icon: 'ti-minus' };
+}
+
+// ── Logging animations (reused) ───────────────────────────
 function playLogSound() {
   try {
     const ctx = new AudioContext();
@@ -163,42 +223,17 @@ function playLogSound() {
     osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
   } catch(e) {}
 }
-
 function floatKmUp(km, color) {
   const el = document.createElement('div');
-  el.textContent = '+' + km.toFixed(1).replace('.', ',') + ' km';
-  el.style.cssText = 'position:fixed;bottom:240px;left:50%;font-size:40px;font-weight:900;letter-spacing:-1px;color:' + color + ';z-index:2000;pointer-events:none;font-family:var(--font);text-shadow:0 0 32px ' + color + '99;animation:floatUp 1.3s ease-out forwards';
+  el.textContent = '+' + fmt(km) + ' km';
+  el.style.cssText = 'position:fixed;bottom:200px;left:50%;font-size:40px;font-weight:900;letter-spacing:-1px;color:' + color + ';z-index:2000;pointer-events:none;font-family:var(--font);text-shadow:0 0 32px ' + color + '99;animation:floatUp 1.3s ease-out forwards';
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 1400);
 }
 
-function animateCounter(el, from, to, ms) {
-  const start = performance.now();
-  const diff = to - from;
-  (function step(now) {
-    const p = Math.min((now - start) / ms, 1);
-    const eased = 1 - Math.pow(1 - p, 3);
-    el.textContent = (from + diff * eased).toFixed(1).replace('.', ',') + ' km';
-    if (p < 1) requestAnimationFrame(step);
-  })(start);
-}
-
-function timeAgo(ts) {
-  const m = Math.floor((Date.now() - new Date(ts)) / 60000);
-  if (m < 1)  return 'just nu';
-  if (m < 60) return m + ' min sedan';
-  const h = Math.floor(m / 60);
-  if (h < 24) return h + 'h sedan';
-  return Math.floor(h / 24) + 'd sedan';
-}
-
 (async () => {
-  const [geoRes, user] = await Promise.all([
-    fetch('neighbourhoods.geojson').then(r => r.json()),
-    requireAuth(),
-  ]);
+  const user = await requireAuth();
   if (!user) return;
-  GEO = geoRes;
 
   const profile = await getProfile(user.id);
   if (!profile?.neighbourhood_id) { location.href = 'onboarding.html'; return; }
@@ -214,223 +249,257 @@ function timeAgo(ts) {
 
   if (profile.strava_connected) sb.functions.invoke('strava-sync').catch(() => {});
 
-  const weekStart = (() => {
-    const d = new Date(); const day = d.getDay();
-    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  })();
+  // ── Date anchors ───────────────────────────────────────
+  const today = new Date();
+  const todayStr = ymd(today);
+  const tomorrowStr = ymd(addDays(today, 1));
+  const thisMon = mondayOf(today);
+  const nextMon = addDays(thisMon, 7);
+  const lastMon = addDays(thisMon, -7);
+  const Y = today.getFullYear(), M = today.getMonth();
 
-  const map = L.map('map', {
-    zoomControl: false, scrollWheelZoom: true, attributionControl: true,
-  }).setView([59.3293, 18.0686], 12);
+  // ── Fetch everything (gear query tolerates missing table) ──
+  const [woRes, lbRes, gearRes, geoRes] = await Promise.all([
+    sb.from('workouts').select('km, logged_date, created_at').eq('user_id', user.id),
+    sb.from('weekly_km').select('*'),
+    sb.from('gear').select('*').eq('user_id', user.id).eq('active', true).order('created_at', { ascending: false }),
+    fetch('neighbourhoods.geojson').then(r => r.json()).catch(() => null),
+  ]);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CartoDB', maxZoom: 16,
-  }).addTo(map);
+  const wo   = woRes.data || [];
+  const lb   = lbRes.data || [];
+  const gear = gearRes.error ? [] : (gearRes.data || []);
 
-  map.invalidateSize();
+  // ── Period computations ────────────────────────────────
+  const weekKm      = sumKm(wo, ymd(thisMon), ymd(nextMon));
+  const lastWeekKm  = sumKm(wo, ymd(lastMon), ymd(thisMon));
+  const periods = {
+    vecka: { label: 'denna vecka', km: weekKm,
+             runs: countRuns(wo, ymd(thisMon), ymd(nextMon)) },
+    manad: { label: 'denna månad', km: sumKm(wo, ymd(new Date(Y,M,1)), ymd(new Date(Y,M+1,1))),
+             runs: countRuns(wo, ymd(new Date(Y,M,1)), ymd(new Date(Y,M+1,1))) },
+    ar:    { label: 'i år',        km: sumKm(wo, ymd(new Date(Y,0,1)), ymd(new Date(Y+1,0,1))),
+             runs: countRuns(wo, ymd(new Date(Y,0,1)), ymd(new Date(Y+1,0,1))) },
+  };
 
-  const layerMap = {};
-  GEO.features.forEach(f => {
-    const nhId  = f.properties.id;
-    const nb    = NEIGHBOURHOODS.find(n => n.id === nhId);
-    if (!nb) return;
-    const isMine = nhId === myNhId;
-    const layer = L.geoJSON(f, {
-      style: {
-        fillColor:    nb.color,
-        fillOpacity:  isMine ? 0.22 : 0.10,
-        color:        nb.color,
-        weight:       isMine ? 3 : 1.5,
-        opacity:      isMine ? 1 : 0.65,
-      }
-    }).addTo(map);
+  // ── Daily bars (Mon–Sun current week) ──────────────────
+  const dayLbls = ['M','T','O','T','F','L','S'];
+  const daily = dayLbls.map((lbl, i) => {
+    const d = addDays(thisMon, i);
+    return { lbl, km: sumKm(wo, ymd(d), ymd(addDays(d, 1))), isToday: ymd(d) === todayStr };
+  });
+  const maxDay = Math.max(0.1, ...daily.map(d => d.km));
 
-    const layerRef = { layer, nb, isMine, baseFillOpacity: isMine ? 0.22 : 0.10 };
-    layerMap[nhId] = layerRef;
+  // ── Rank ───────────────────────────────────────────────
+  const myRank = lb.findIndex(e => e.id === myNhId) + 1;
 
-    layer.bindPopup('', { maxWidth:190 });
-    layer.on('click', () => layer.openPopup());
-    layer.on('mouseover', () => layer.setStyle({ fillOpacity: Math.min(layerRef.baseFillOpacity + 0.15, 0.5) }));
-    layer.on('mouseout',  () => layer.setStyle({ fillOpacity: layerRef.baseFillOpacity }));
+  // ── Greeting ───────────────────────────────────────────
+  const hour = today.getHours();
+  const firstName = (profile.name || 'du').split(' ')[0];
+  const greeting = hour < 10 ? `God morgon, ${firstName}`
+                 : hour < 17 ? `Hej, ${firstName}`
+                 : `God kväll, ${firstName}`;
+
+  // ── Weekly delta ───────────────────────────────────────
+  const wd = deltaBadge(weekKm, lastWeekKm);
+
+  // ── Gear ───────────────────────────────────────────────
+  const g = gear[0];
+  let gearHtml;
+  if (g) {
+    const used   = sumKm(wo, g.purchase_date, tomorrowStr);
+    const maxKm  = Number(g.max_km || 800);
+    const pctRaw = maxKm > 0 ? used / maxKm : 0;
+    const pct    = Math.min(100, Math.round(pctRaw * 100));
+    const warn   = pctRaw > 0.85;
+    const left   = Math.max(0, maxKm - used);
+    gearHtml = `
+      <div class="gear-row">
+        <div class="gear-icon"><i class="ti ti-shoe"></i></div>
+        <div style="flex:1;min-width:0">
+          <div class="gear-name">${g.name}</div>
+          <div class="gear-brand">${g.brand || 'Löparskor'}</div>
+        </div>
+        <div>
+          <div class="gear-km">${fmt(used)} km</div>
+          <div class="gear-km-max">av ${maxKm} km</div>
+        </div>
+      </div>
+      <div class="prog-track"><div class="prog-fill${warn ? ' warn' : ''}" style="width:${pct}%"></div></div>
+      <div class="gear-left">${warn ? 'Dags att byta skor snart' : `${fmt(left)} km kvar`}</div>`;
+  } else {
+    gearHtml = `
+      <div class="gear-empty">
+        <div class="gear-empty-icon"><i class="ti ti-shoe"></i></div>
+        <div class="gear-empty-txt">Inga skor tillagda än</div>
+        <a href="profile.html" class="btn btn-primary btn-sm" style="text-decoration:none;display:inline-flex">
+          <i class="ti ti-plus"></i> Lägg till skor
+        </a>
+      </div>`;
+  }
+
+  // ── Render ─────────────────────────────────────────────
+  document.getElementById('content').innerHTML = `
+    <div class="dash-header">
+      <div>
+        <div class="dash-greeting">${greeting}</div>
+        <div class="nh-pill"><span class="nh-pill-dot"></span>${myNhName}</div>
+      </div>
+      <button class="header-btn" onclick="location.href='profile.html'" aria-label="Inställningar">
+        <i class="ti ti-settings"></i>
+      </button>
+    </div>
+
+    <div class="dash-content">
+
+      <!-- Weekly stats hero -->
+      <div class="d-card">
+        <div class="d-lbl">Denna vecka</div>
+        <div class="hero-num">${fmt(weekKm)} <span class="hero-unit">km</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <div class="hero-cmp">Förra veckan: ${fmt(lastWeekKm)} km</div>
+          <div class="delta ${wd.cls}"><i class="ti ${wd.icon}"></i>${wd.txt}</div>
+        </div>
+      </div>
+
+      <!-- Week bar chart -->
+      <div class="d-card">
+        <div class="d-lbl" style="margin-bottom:10px">Veckans pass</div>
+        <div class="bars">
+          ${daily.map(d => {
+            const h = d.km > 0 ? Math.round(8 + (d.km / maxDay) * 56) : 4;
+            return `<div class="bar-col${d.isToday ? ' is-today' : ''}">
+              <div class="bar${d.isToday ? ' today' : ''}" style="height:${h}px"></div>
+              <div class="bar-lbl">${d.lbl}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Time filter / total view -->
+      <div class="d-card">
+        <div class="seg" id="seg">
+          <button class="seg-btn active" data-p="vecka">Vecka</button>
+          <button class="seg-btn" data-p="manad">Månad</button>
+          <button class="seg-btn" data-p="ar">År</button>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:14px">
+          <div>
+            <div class="hero-num" id="period-km" style="font-size:34px;margin:0">${fmt(periods.vecka.km)} <span class="hero-unit" style="font-size:16px">km</span></div>
+            <div class="d-lbl" id="period-lbl" style="margin-top:4px">${periods.vecka.label}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:20px;font-weight:800;color:#fff" id="period-runs">${periods.vecka.runs}</div>
+            <div class="d-lbl" style="margin-top:2px">pass</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini map widget -->
+      <div class="mini-map-wrap" onclick="location.href='leaderboard.html'">
+        <div id="mini-map"></div>
+        <div class="map-rank-pill"><i class="ti ti-trophy"></i>#${myRank || '–'} ${myNhName}</div>
+        <div class="map-go"><i class="ti ti-chevron-right"></i></div>
+      </div>
+
+      <!-- Gear tracker -->
+      <div class="d-card">
+        <div class="d-lbl" style="margin-bottom:12px">Dina skor</div>
+        ${gearHtml}
+      </div>
+
+      <!-- Manual log (primary CTA, always visible) -->
+      <div class="d-card">
+        <div class="d-lbl" style="margin-bottom:10px">Logga löppass</div>
+        <div style="display:flex;gap:8px;align-items:stretch">
+          <div style="position:relative;flex:1">
+            <input type="number" id="dash-km" min="0.1" max="100" step="0.1" inputmode="decimal" placeholder="0" class="log-input" />
+            <span class="log-unit">km</span>
+          </div>
+          <button id="dash-log-btn" class="btn btn-primary" style="width:auto;flex-shrink:0;padding:0 22px">Logga</button>
+        </div>
+        <div id="dash-log-msg" style="margin-top:8px;font-size:12px;min-height:16px"></div>
+      </div>
+
+      <!-- Activity feed -->
+      <div>
+        <div class="d-lbl" style="margin:0 4px 8px">Senaste aktivitet</div>
+        <div class="d-card" style="padding:6px 16px">
+          <div id="feed-list"></div>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  // ── Time filter behaviour ──────────────────────────────
+  document.getElementById('seg').addEventListener('click', e => {
+    const btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+    const p = periods[btn.dataset.p];
+    document.getElementById('period-km').innerHTML = `${fmt(p.km)} <span class="hero-unit" style="font-size:16px">km</span>`;
+    document.getElementById('period-lbl').textContent = p.label;
+    document.getElementById('period-runs').textContent = p.runs;
   });
 
-  let pulse = true;
-  setInterval(() => {
-    pulse = !pulse;
-    const mine = layerMap[myNhId];
-    if (mine) mine.layer.setStyle({ color: pulse ? myNhColor : 'rgba(255,255,255,0.25)', weight: pulse ? 3.5 : 2 });
-  }, 900);
+  // ── Mini map ───────────────────────────────────────────
+  if (geoRes) {
+    const miniMap = L.map('mini-map', {
+      zoomControl: false, attributionControl: false, dragging: false,
+      scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false,
+      keyboard: false, tap: false, touchZoom: false,
+    }).setView([59.3293, 18.0686], 10);
 
-  function flashPolygon() {
-    const ref = layerMap[myNhId];
-    if (!ref) return;
-    const orig = ref.baseFillOpacity;
-    ref.layer.setStyle({ fillOpacity: 0.85, weight: 8 });
-    setTimeout(() => ref.layer.setStyle({ fillOpacity: 0.4,  weight: 5 }), 150);
-    setTimeout(() => ref.layer.setStyle({ fillOpacity: 0.85, weight: 8 }), 300);
-    setTimeout(() => ref.layer.setStyle({ fillOpacity: 0.4,  weight: 5 }), 450);
-    setTimeout(() => ref.layer.setStyle({ fillOpacity: 0.85, weight: 8 }), 600);
-    setTimeout(() => ref.layer.setStyle({ fillOpacity: orig,  weight: ref.isMine ? 3.5 : 1.5 }), 1000);
-  }
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 16 }).addTo(miniMap);
 
-  let lastMyKm     = null;
-  let latestLeading = false;
-  let greetingShown = false;
-
-  async function updateData() {
-    const [lbRes, myWoRes] = await Promise.all([
-      sb.from('weekly_km').select('*'),
-      sb.from('workouts').select('km').eq('user_id', user.id).gte('logged_date', weekStart),
-    ]);
-
-    const entries   = lbRes.data || [];
-    const myKm      = (myWoRes.data || []).reduce((s, w) => s + Number(w.km), 0);
-    const myRow     = entries.find(e => e.id === myNhId);
-    const myRank    = entries.findIndex(e => e.id === myNhId) + 1;
-    const isLeading = myRank === 1 && (myRow?.total_km || 0) > 0;
-    latestLeading   = isLeading;
-
-    entries.forEach((e, i) => {
-      const ref = layerMap[e.id];
-      if (!ref) return;
-      ref.baseFillOpacity = ref.isMine
-        ? Math.max(0.22, kmOpacity(e.total_km) * 0.4)
-        : kmOpacity(e.total_km) * 0.22;
-      ref.layer.setStyle({ fillOpacity: ref.baseFillOpacity });
-      ref.layer.setPopupContent(`
-        <div class="map-popup-name">${ref.nb.name}</div>
-        <div class="map-popup-km">${Number(e.total_km).toFixed(1).replace('.',',')} km</div>
-        <div class="map-popup-rank">#${i+1} denna vecka</div>
-        <div class="map-popup-sub">${e.active_runners} aktiva löpare</div>
-      `);
+    const group = L.featureGroup();
+    geoRes.features.forEach(f => {
+      const nb = NEIGHBOURHOODS.find(n => n.id === f.properties.id);
+      if (!nb) return;
+      const isMine = f.properties.id === myNhId;
+      L.geoJSON(f, { style: {
+        fillColor: nb.color, fillOpacity: isMine ? 0.45 : 0.10,
+        color: nb.color, weight: isMine ? 2.5 : 1, opacity: isMine ? 1 : 0.5,
+      }}).addTo(group);
     });
-
-    document.getElementById('stat-grid').innerHTML = `
-      <div>
-        <div style="font-size:17px;font-weight:800;color:#fff;line-height:1.2">${myNhName}</div>
-        <div class="map-stat-label">Din stadsdel</div>
-      </div>
-      <div style="text-align:center">
-        <div style="font-size:48px;font-weight:900;line-height:1;letter-spacing:-3px;color:var(--hood-color)">#${myRank||'–'}</div>
-        <div class="map-stat-label">Din rank</div>
-      </div>
-      <div style="text-align:right">
-        <div id="dash-my-km" style="font-size:24px;font-weight:800;color:var(--hood-color);line-height:1.1">${myKm.toFixed(1).replace('.',',')} km</div>
-        <div class="map-stat-label">Denna vecka</div>
-      </div>
-    `;
-
-    if (lastMyKm !== null && myKm !== lastMyKm) {
-      const el = document.getElementById('dash-my-km');
-      if (el) animateCounter(el, lastMyKm, myKm, 800);
-    }
-    lastMyKm = myKm;
-
-    const banner  = document.getElementById('attack-banner');
-    const myNhKm  = Number(myRow?.total_km || 0);
-    let attackMsg = null;
-    if (myNhKm > 0) {
-      if (isLeading) {
-        const rival = entries[1];
-        if (rival) {
-          const gap = myNhKm - Number(rival.total_km || 0);
-          if (gap <= 15) attackMsg = `${rival.name} är bara ${gap.toFixed(1).replace('.',',')} km bakom — spring nu!`;
-        }
-      } else {
-        const leader = entries[0];
-        if (leader) {
-          const gap = Number(leader.total_km || 0) - myNhKm;
-          if (gap <= 15) attackMsg = `Du är ${gap.toFixed(1).replace('.',',')} km från att ta #1 — spring nu!`;
-        }
-      }
-    }
-    if (attackMsg) {
-      document.getElementById('attack-text').textContent = attackMsg;
-      banner.classList.add('visible');
-    } else {
-      banner.classList.remove('visible');
-    }
-
-
-    document.getElementById('bottom-card').style.display = 'block';
-    document.getElementById('loading').classList.add('hidden');
+    group.addTo(miniMap);
+    try { miniMap.fitBounds(group.getBounds(), { padding: [10, 10] }); } catch(e) {}
+    setTimeout(() => miniMap.invalidateSize(), 120);
   }
 
+  // ── Activity feed ──────────────────────────────────────
   async function refreshFeed() {
     const { data } = await sb
       .from('workouts')
       .select('km, created_at, profiles(neighbourhoods(name, color))')
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(6);
 
     const items = (data || []).filter(w => w.profiles?.neighbourhoods);
-
     const PLACEHOLDERS = [
       { nhName: 'Södermalm', color: '#378ADD', km: 4.2, ts: new Date(Date.now() - 480000) },
       { nhName: 'Vasastan',  color: '#639922', km: 7.8, ts: new Date(Date.now() - 1920000) },
       { nhName: 'Östermalm', color: '#BA7517', km: 3.1, ts: new Date(Date.now() - 3660000) },
     ];
-
     const rows = items.length > 0
       ? items.map(w => ({ nhName: w.profiles.neighbourhoods.name, color: w.profiles.neighbourhoods.color, km: Number(w.km), ago: timeAgo(w.created_at) }))
       : PLACEHOLDERS.map(p => ({ ...p, ago: timeAgo(p.ts) }));
 
     const feedList = document.getElementById('feed-list');
-    const feedWrap = document.getElementById('feed-wrap');
     if (!feedList) return;
-
     feedList.innerHTML = rows.map((r, i) => `
-      <div class="feed-row" style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;animation-delay:${i * 0.07}s">
-        <div style="width:6px;height:6px;border-radius:50%;background:${r.color};flex-shrink:0;margin-top:4px"></div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.5">
-          Någon i <span style="color:${r.color};font-weight:700">${r.nhName}</span> loggade ${r.km.toFixed(1).replace('.',',')} km
-          <span style="color:rgba(255,255,255,0.28);margin-left:2px">${r.ago}</span>
+      <div class="feed-row" style="animation-delay:${i * 0.06}s">
+        <div class="feed-dot" style="background:${r.color}"></div>
+        <div class="feed-txt">
+          Någon i <span style="color:${r.color};font-weight:700">${r.nhName}</span> loggade ${fmt(r.km)} km
+          <span style="color:rgba(255,255,255,0.3);margin-left:2px">${r.ago}</span>
         </div>
-      </div>
-    `).join('');
-
-    feedWrap.style.display = 'block';
+      </div>`).join('');
   }
-
-  await updateData();
-
-  // Personal greeting (shown once on load)
-  if (!greetingShown) {
-    greetingShown = true;
-    const hour = new Date().getHours();
-    const firstName = (profile.name || 'du').split(' ')[0];
-    let msg;
-    if (latestLeading) {
-      msg = 'Du leder Stockholm just nu 👑';
-    } else if (hour >= 6 && hour < 10) {
-      msg = `God morgon ${firstName} — ${myNhName} vaknar 🌅`;
-    } else if (lastMyKm > 0) {
-      msg = `Bra jobbat idag ${firstName} 💪`;
-    } else {
-      msg = `${myNhName} behöver dig — spring idag!`;
-    }
-    const greetEl = document.getElementById('greeting');
-    document.getElementById('greeting-text').textContent = msg;
-    greetEl.style.opacity = '1';
-    setTimeout(() => { greetEl.style.opacity = '0'; }, 4000);
-  }
-
   await refreshFeed();
 
-  // Bottom sheet toggle
-  const card = document.getElementById('bottom-card');
-  let touchY0 = 0;
-  document.getElementById('drag-handle').addEventListener('click', () => {
-    card.classList.toggle('expanded');
-  });
-  card.addEventListener('touchstart', e => { touchY0 = e.touches[0].clientY; }, { passive: true });
-  card.addEventListener('touchend', e => {
-    const dy = touchY0 - e.changedTouches[0].clientY;
-    if (dy > 40)       card.classList.add('expanded');
-    else if (dy < -40) card.classList.remove('expanded');
-  }, { passive: true });
-
+  // ── Manual logging ─────────────────────────────────────
   document.getElementById('dash-log-btn').addEventListener('click', async () => {
     const kmInput = document.getElementById('dash-km');
     const msgEl   = document.getElementById('dash-log-msg');
@@ -438,51 +507,30 @@ function timeAgo(ts) {
     const km      = parseFloat(kmInput.value);
 
     msgEl.textContent = '';
-    if (!km || km <= 0) {
-      msgEl.style.color = '#FCA5A5'; msgEl.textContent = 'Ange hur långt du sprang.'; return;
-    }
-    if (km > 100) {
-      msgEl.style.color = '#FCA5A5'; msgEl.textContent = 'Max 100 km per pass.'; return;
-    }
+    if (!km || km <= 0) { msgEl.style.color = '#FCA5A5'; msgEl.textContent = 'Ange hur långt du sprang.'; return; }
+    if (km > 100)       { msgEl.style.color = '#FCA5A5'; msgEl.textContent = 'Max 100 km per pass.'; return; }
 
     btn.disabled = true; btn.textContent = '…';
-
     const { error } = await sb.from('workouts').insert({
-      user_id: user.id,
-      km: Math.round(km * 100) / 100,
-      logged_date: getTodayStr(),
+      user_id: user.id, km: Math.round(km * 100) / 100, logged_date: todayStr,
     });
-
     btn.disabled = false; btn.textContent = 'Logga';
 
-    if (error) {
-      msgEl.style.color = '#FCA5A5'; msgEl.textContent = error.message; return;
-    }
+    if (error) { msgEl.style.color = '#FCA5A5'; msgEl.textContent = error.message; return; }
 
     msgEl.style.color = '#6EE7B7';
-    msgEl.textContent = `+${km.toFixed(1).replace('.',',')} km loggat!`;
+    msgEl.textContent = `+${fmt(km)} km loggat!`;
     kmInput.value = '';
     playLogSound();
     floatKmUp(km, myNhColor);
-    flashPolygon();
-    card.classList.add('expanded');
-    await updateData();
-    await refreshFeed();
+    setTimeout(() => location.reload(), 900);
   });
 
+  // ── Realtime: refresh feed on new workouts ─────────────
   sb.channel('dashboard-live')
-    .on('postgres_changes', { event:'INSERT', schema:'public', table:'workouts' }, async () => {
-      await updateData();
-      await refreshFeed();
-    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'workouts' }, refreshFeed)
     .subscribe();
-
 })();
 </script>
-
-<button onclick="sb.auth.signOut().then(()=>location.href='login.html')"
-  style="position:fixed;bottom:16px;left:16px;z-index:999;opacity:0.5;display:flex;align-items:center;gap:4px;padding:5px 10px;background:none;border:none;cursor:pointer;font-family:var(--font);font-size:11px;font-weight:600;color:#fff">
-  <i class="ti ti-logout" style="font-size:14px"></i> Logga ut
-</button>
 </body>
 </html>
