@@ -208,7 +208,6 @@ function parseTime(str){ const parts=String(str).trim().split(':').map(Number); 
     `${parseInt(_c.slice(0,2),16)},${parseInt(_c.slice(2,4),16)},${parseInt(_c.slice(4,6),16)}`);
 
   const today = new Date(); today.setHours(0,0,0,0);
-  const Y = today.getFullYear();
   const weekStart = ymd(mondayOf(today));
 
   // ── Data ────────────────────────────────────────────────
@@ -331,15 +330,7 @@ function parseTime(str){ const parts=String(str).trim().split(':').map(Number); 
         </div>`).join('')}
     </div>`;
 
-  // ── Journey + PR builders ──────────────────────────────
-  const FAV   = [['5k','5K'],['10k','10K'],['half','Halv'],['marathon','Marathon'],['ultra','Ultra'],['trail','Trail']];
-  const TTYPE = [['intervall','Intervall'],['lugna','Lugna'],['race','Race'],['tempo','Tempo'],['lang','Lång'],['trail','Trail'],['backe','Backe']];
-  const GOAL  = [['lose_weight','Gå ner i vikt'],['build_endurance','Bygg uthållighet'],['race_prep','Lopp-prep'],['just_for_fun','För kul']];
-  const curTypes = profile.training_type || [];
-  const favOpts  = FAV.map(([v,l])   => `<button type="button" class="seg-opt${profile.favourite_distance===v?' active':''}" data-v="${v}">${l}</button>`).join('');
-  const typeOpts = TTYPE.map(([v,l]) => `<button type="button" class="seg-opt${curTypes.includes(v)?' active':''}" data-v="${v}">${l}</button>`).join('');
-  const goalOpts = GOAL.map(([v,l])  => `<button type="button" class="seg-opt${profile.training_goal===v?' active':''}" data-v="${v}">${l}</button>`).join('');
-
+  // ── PR builders ────────────────────────────────────────
   const prsSorted = [...prs].sort((a,b) => (DIST_ORDER.indexOf(a.distance)-DIST_ORDER.indexOf(b.distance)) || (a.time_seconds-b.time_seconds));
   const prRows = prsSorted.map(p => {
     const meta = []; if (p.achieved_date) meta.push(dateShort(p.achieved_date)); if (p.location) meta.push(esc(p.location));
@@ -456,47 +447,11 @@ function parseTime(str){ const parts=String(str).trim().split(':').map(Number); 
         <div class="alert" id="mantra-msg" style="margin-top:8px"></div>
       </div>
 
-      <!-- 4. KROPPSMÅTT -->
-      <div class="sec-title"><i class="ti ti-ruler-2"></i> Kroppsmått</div>
-      <div class="card">
-        <div style="display:flex;gap:10px">
-          <div class="field" style="flex:1;margin:0">
-            <label class="field-label">Längd (cm)</label>
-            <input type="number" class="input" id="height-input" min="100" max="250" placeholder="—" value="${profile.height_cm ?? ''}" />
-          </div>
-          <div class="field" style="flex:1;margin:0">
-            <label class="field-label">Vikt (kg)</label>
-            <input type="number" class="input" id="weight-input" min="30" max="300" step="0.1" placeholder="—" value="${profile.weight_kg ?? ''}" />
-          </div>
-        </div>
-        <button class="btn btn-primary" id="body-save" style="margin-top:12px"><i class="ti ti-check"></i> Spara</button>
-        <div class="alert" id="body-msg" style="margin-top:8px"></div>
-        <div class="disclaimer"><i class="ti ti-lock"></i> Detta är frivilligt och syns bara för dig</div>
-      </div>
-
       <!-- 5. BELÖNINGAR & STREAKS -->
       <div class="sec-title"><i class="ti ti-award"></i> Belöningar & streaks <span style="margin-left:auto;color:rgba(255,255,255,0.35);letter-spacing:0">${earnedCount}/${badges.length}</span></div>
       ${badgeHtml}
 
-      <!-- 6. MIN LÖPARRESA -->
-      <div class="sec-title"><i class="ti ti-route"></i> Min löparresa</div>
-      <div class="card">
-        <div class="field"><label class="field-label">När började du springa?</label>
-          <input type="number" class="input" id="jr-year" min="1950" max="${Y}" placeholder="t.ex. 2019" value="${profile.started_running_year ?? ''}" /></div>
-        <div class="field-label" style="margin-bottom:8px">Favoritdistans</div>
-        <div class="seg" id="jr-fav" data-single="1">${favOpts}</div>
-        <div class="field-label" style="margin:16px 0 8px">Träningstyp</div>
-        <div class="seg" id="jr-type">${typeOpts}</div>
-        <div class="field-label" style="margin:16px 0 8px">Träningsmål</div>
-        <div class="seg" id="jr-goal" data-single="1">${goalOpts}</div>
-        <div class="field" style="margin:16px 0 0"><label class="field-label">Skadehistorik (privat)</label>
-          <textarea class="input" id="jr-injury" placeholder="Anteckningar om skador, rehab…">${esc(profile.injury_notes || '')}</textarea></div>
-        <button class="btn btn-primary" id="jr-save" style="margin-top:14px"><i class="ti ti-check"></i> Spara löparresa</button>
-        <div class="alert" id="jr-msg" style="margin-top:8px"></div>
-        <div class="disclaimer"><i class="ti ti-lock"></i> Skadehistorik syns bara för dig</div>
-      </div>
-
-      <!-- 7. PERSONLIGA REKORD -->
+      <!-- 6. PERSONLIGA REKORD -->
       <div class="sec-title"><i class="ti ti-trophy"></i> Personliga rekord</div>
       ${prHtml}
 
@@ -552,22 +507,6 @@ function parseTime(str){ const parts=String(str).trim().split(':').map(Number); 
     btn.disabled = false;
   });
 
-  // ── Body measurements ───────────────────────────────────
-  document.getElementById('body-save').addEventListener('click', async () => {
-    const hv = document.getElementById('height-input').value;
-    const wv = document.getElementById('weight-input').value;
-    const btn = document.getElementById('body-save');
-    const msg = document.getElementById('body-msg');
-    btn.disabled = true;
-    const { error } = await sb.from('profiles').update({
-      height_cm: hv === '' ? null : parseInt(hv),
-      weight_kg: wv === '' ? null : parseFloat(wv),
-    }).eq('id', user.id);
-    if (error) { msg.textContent = error.message; msg.className = 'alert alert-error show'; }
-    else { msg.textContent = 'Sparat!'; msg.className = 'alert alert-success show'; setTimeout(() => { msg.className = 'alert'; }, 2500); }
-    btn.disabled = false;
-  });
-
   // ── Gear actions ────────────────────────────────────────
   document.getElementById('add-gear').addEventListener('click', () => openGearModal(null));
   document.querySelectorAll('.gear-edit').forEach(b =>
@@ -596,35 +535,6 @@ function parseTime(str){ const parts=String(str).trim().split(':').map(Number); 
 
   // ── Username ────────────────────────────────────────────
   document.getElementById('username-card').addEventListener('click', openUsernameModal);
-
-  // ── Journey: segment toggles + save ─────────────────────
-  document.querySelectorAll('.seg').forEach(seg => {
-    seg.addEventListener('click', e => {
-      const o = e.target.closest('.seg-opt'); if (!o) return;
-      if (seg.dataset.single === '1') {
-        const was = o.classList.contains('active');
-        seg.querySelectorAll('.seg-opt').forEach(x => x.classList.remove('active'));
-        if (!was) o.classList.add('active');
-      } else { o.classList.toggle('active'); }
-    });
-  });
-  document.getElementById('jr-save').addEventListener('click', async () => {
-    const yr = document.getElementById('jr-year').value;
-    const fav = document.querySelector('#jr-fav .seg-opt.active')?.dataset.v || null;
-    const goal = document.querySelector('#jr-goal .seg-opt.active')?.dataset.v || null;
-    const types = [...document.querySelectorAll('#jr-type .seg-opt.active')].map(x => x.dataset.v);
-    const injury = document.getElementById('jr-injury').value.trim();
-    const btn = document.getElementById('jr-save'); const msg = document.getElementById('jr-msg'); btn.disabled = true;
-    const { error } = await sb.from('profiles').update({
-      started_running_year: yr === '' ? null : parseInt(yr),
-      favourite_distance: fav, training_goal: goal,
-      training_type: types.length ? types : null,
-      injury_notes: injury || null,
-    }).eq('id', user.id);
-    if (error) { msg.textContent = error.message; msg.className = 'alert alert-error show'; }
-    else { msg.textContent = 'Sparat!'; msg.className = 'alert alert-success show'; setTimeout(() => { msg.className = 'alert'; }, 2500); }
-    btn.disabled = false;
-  });
 
   // ── PR actions ──────────────────────────────────────────
   document.getElementById('add-pr').addEventListener('click', openPrModal);
