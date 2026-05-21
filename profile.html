@@ -133,6 +133,26 @@
     .modal-close { position: absolute; top: 14px; right: 16px; width: 32px; height: 32px; border-radius: 50%; padding: 0; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; cursor: pointer; font-family: var(--font); }
     .modal-close .ti { font-size: 18px; }
     .modal-title { font-size: 18px; font-weight: 800; color: #fff; margin: 2px 0 16px; padding-right: 40px; }
+
+    /* ── Username card ──────────────────────────────────── */
+    .uname-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .uname-big { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+    .uname-sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+    /* ── Segmented / multi-select ───────────────────────── */
+    .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+    .seg-opt { padding: 9px 14px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer; }
+    .seg-opt.active { background: rgba(var(--hood-rgb),0.18); border-color: var(--hood-color); color: var(--hood-color); }
+
+    /* ── Personal records ───────────────────────────────── */
+    .pr-item { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+    .pr-item:first-child { padding-top: 2px; }
+    .pr-item:last-child { border-bottom: none; padding-bottom: 2px; }
+    .pr-dist { width: 58px; flex-shrink: 0; font-size: 11px; font-weight: 800; color: var(--hood-color); text-transform: uppercase; letter-spacing: 0.03em; }
+    .pr-time { font-size: 17px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+    .pr-meta { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 500; margin-top: 1px; }
+    textarea.input { resize: vertical; min-height: 64px; font-family: var(--font); line-height: 1.5; }
+    select.input { -webkit-appearance: none; appearance: none; }
   </style>
 </head>
 <body>
@@ -167,6 +187,11 @@ const ymd  = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
 const mondayOf = d => { const x = new Date(d); const day = x.getDay(); x.setDate(x.getDate()-(day===0?6:day-1)); x.setHours(0,0,0,0); return x; };
 const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const DIST_LABELS = { '5k':'5K','10k':'10K','half_marathon':'Halvmara','marathon':'Marathon','mile':'Eng. mil','other':'Övrigt' };
+const DIST_ORDER  = ['mile','5k','10k','half_marathon','marathon','other'];
+const dateShort = str => { const d = new Date(str + 'T00:00:00'); return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`; };
+function fmtTime(sec){ sec=Number(sec); const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60,p=n=>String(n).padStart(2,'0'); return h>0?`${h}:${p(m)}:${p(s)}`:`${m}:${p(s)}`; }
+function parseTime(str){ const parts=String(str).trim().split(':').map(Number); if(!parts.length||parts.some(n=>isNaN(n))) return null; if(parts.length===2) return parts[0]*60+parts[1]; if(parts.length===3) return parts[0]*3600+parts[1]*60+parts[2]; return null; }
 
 (async () => {
   const user = await requireAuth();
@@ -183,17 +208,20 @@ const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     `${parseInt(_c.slice(0,2),16)},${parseInt(_c.slice(2,4),16)},${parseInt(_c.slice(4,6),16)}`);
 
   const today = new Date(); today.setHours(0,0,0,0);
+  const Y = today.getFullYear();
   const weekStart = ymd(mondayOf(today));
 
   // ── Data ────────────────────────────────────────────────
-  const [woRes, gearRes, racesRes] = await Promise.all([
+  const [woRes, gearRes, racesRes, prRes] = await Promise.all([
     sb.from('workouts').select('km, logged_date, created_at').eq('user_id', user.id).order('logged_date', { ascending: false }),
     sb.from('gear').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
     sb.from('races').select('*').eq('user_id', user.id).order('race_date', { ascending: true }),
+    sb.from('personal_records').select('*').eq('user_id', user.id),
   ]);
   const wo    = woRes.data || [];
   const gear  = gearRes.error  ? [] : (gearRes.data  || []);
   const races = racesRes.error ? [] : (racesRes.data || []);
+  const prs   = prRes.error    ? [] : (prRes.data    || []);
 
   const totalKm = wo.reduce((s,w) => s + Number(w.km), 0);
   const weekKm  = wo.filter(w => w.logged_date >= weekStart).reduce((s,w) => s + Number(w.km), 0);
@@ -303,6 +331,27 @@ const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
         </div>`).join('')}
     </div>`;
 
+  // ── Journey + PR builders ──────────────────────────────
+  const FAV   = [['5k','5K'],['10k','10K'],['half','Halv'],['marathon','Marathon'],['ultra','Ultra'],['trail','Trail']];
+  const TTYPE = [['intervall','Intervall'],['lugna','Lugna'],['race','Race'],['tempo','Tempo'],['lang','Lång'],['trail','Trail'],['backe','Backe']];
+  const GOAL  = [['lose_weight','Gå ner i vikt'],['build_endurance','Bygg uthållighet'],['race_prep','Lopp-prep'],['just_for_fun','För kul']];
+  const curTypes = profile.training_type || [];
+  const favOpts  = FAV.map(([v,l])   => `<button type="button" class="seg-opt${profile.favourite_distance===v?' active':''}" data-v="${v}">${l}</button>`).join('');
+  const typeOpts = TTYPE.map(([v,l]) => `<button type="button" class="seg-opt${curTypes.includes(v)?' active':''}" data-v="${v}">${l}</button>`).join('');
+  const goalOpts = GOAL.map(([v,l])  => `<button type="button" class="seg-opt${profile.training_goal===v?' active':''}" data-v="${v}">${l}</button>`).join('');
+
+  const prsSorted = [...prs].sort((a,b) => (DIST_ORDER.indexOf(a.distance)-DIST_ORDER.indexOf(b.distance)) || (a.time_seconds-b.time_seconds));
+  const prRows = prsSorted.map(p => {
+    const meta = []; if (p.achieved_date) meta.push(dateShort(p.achieved_date)); if (p.location) meta.push(esc(p.location));
+    return `<div class="pr-item">
+      <div class="pr-dist">${DIST_LABELS[p.distance] || esc(p.distance)}</div>
+      <div style="flex:1;min-width:0"><div class="pr-time">${fmtTime(p.time_seconds)}</div>${meta.length ? `<div class="pr-meta">${meta.join(' · ')}</div>` : ''}</div>
+      <button class="icon-btn danger pr-del" data-id="${p.id}" aria-label="Ta bort"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+  const prHtml = `<div class="card">${prsSorted.length ? prRows : `<div class="empty-mini"><i class="ti ti-trophy"></i><div class="empty-mini-txt">Inga rekord än</div></div>`}</div>
+    <button class="add-btn" id="add-pr" style="margin-top:10px"><i class="ti ti-plus"></i> ${prsSorted.length ? 'Lägg till PR' : 'Lägg till ditt första PR'}</button>`;
+
   // ── Render ──────────────────────────────────────────────
   document.getElementById('content').innerHTML = `
     <div class="page-padded">
@@ -320,6 +369,17 @@ const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
         <div style="display:flex;align-items:center;gap:6px;position:relative;z-index:1">
           <div style="width:8px;height:8px;border-radius:50%;background:${nhColor}"></div>
           <div style="font-size:13px;color:rgba(255,255,255,0.55);font-weight:600">${esc(nhName)}</div>
+        </div>
+      </div>
+
+      <!-- Username (prominent) -->
+      <div class="card" id="username-card" style="margin-bottom:12px;cursor:pointer">
+        <div class="uname-card">
+          <div>
+            <div class="uname-big">${profile.username ? '@' + esc(profile.username) : 'Välj ett användarnamn'}</div>
+            <div class="uname-sub">${profile.username ? 'Så hittar vänner dig' : 'Krävs för att vänner ska hitta dig'}</div>
+          </div>
+          <i class="ti ti-${profile.username ? 'pencil' : 'plus'}" style="color:var(--hood-color);font-size:20px"></i>
         </div>
       </div>
 
@@ -418,6 +478,28 @@ const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       <div class="sec-title"><i class="ti ti-award"></i> Belöningar & streaks <span style="margin-left:auto;color:rgba(255,255,255,0.35);letter-spacing:0">${earnedCount}/${badges.length}</span></div>
       ${badgeHtml}
 
+      <!-- 6. MIN LÖPARRESA -->
+      <div class="sec-title"><i class="ti ti-route"></i> Min löparresa</div>
+      <div class="card">
+        <div class="field"><label class="field-label">När började du springa?</label>
+          <input type="number" class="input" id="jr-year" min="1950" max="${Y}" placeholder="t.ex. 2019" value="${profile.started_running_year ?? ''}" /></div>
+        <div class="field-label" style="margin-bottom:8px">Favoritdistans</div>
+        <div class="seg" id="jr-fav" data-single="1">${favOpts}</div>
+        <div class="field-label" style="margin:16px 0 8px">Träningstyp</div>
+        <div class="seg" id="jr-type">${typeOpts}</div>
+        <div class="field-label" style="margin:16px 0 8px">Träningsmål</div>
+        <div class="seg" id="jr-goal" data-single="1">${goalOpts}</div>
+        <div class="field" style="margin:16px 0 0"><label class="field-label">Skadehistorik (privat)</label>
+          <textarea class="input" id="jr-injury" placeholder="Anteckningar om skador, rehab…">${esc(profile.injury_notes || '')}</textarea></div>
+        <button class="btn btn-primary" id="jr-save" style="margin-top:14px"><i class="ti ti-check"></i> Spara löparresa</button>
+        <div class="alert" id="jr-msg" style="margin-top:8px"></div>
+        <div class="disclaimer"><i class="ti ti-lock"></i> Skadehistorik syns bara för dig</div>
+      </div>
+
+      <!-- 7. PERSONLIGA REKORD -->
+      <div class="sec-title"><i class="ti ti-trophy"></i> Personliga rekord</div>
+      ${prHtml}
+
       <div style="height:24px"></div>
     </div>
   `;
@@ -512,6 +594,46 @@ const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       location.reload();
     }));
 
+  // ── Username ────────────────────────────────────────────
+  document.getElementById('username-card').addEventListener('click', openUsernameModal);
+
+  // ── Journey: segment toggles + save ─────────────────────
+  document.querySelectorAll('.seg').forEach(seg => {
+    seg.addEventListener('click', e => {
+      const o = e.target.closest('.seg-opt'); if (!o) return;
+      if (seg.dataset.single === '1') {
+        const was = o.classList.contains('active');
+        seg.querySelectorAll('.seg-opt').forEach(x => x.classList.remove('active'));
+        if (!was) o.classList.add('active');
+      } else { o.classList.toggle('active'); }
+    });
+  });
+  document.getElementById('jr-save').addEventListener('click', async () => {
+    const yr = document.getElementById('jr-year').value;
+    const fav = document.querySelector('#jr-fav .seg-opt.active')?.dataset.v || null;
+    const goal = document.querySelector('#jr-goal .seg-opt.active')?.dataset.v || null;
+    const types = [...document.querySelectorAll('#jr-type .seg-opt.active')].map(x => x.dataset.v);
+    const injury = document.getElementById('jr-injury').value.trim();
+    const btn = document.getElementById('jr-save'); const msg = document.getElementById('jr-msg'); btn.disabled = true;
+    const { error } = await sb.from('profiles').update({
+      started_running_year: yr === '' ? null : parseInt(yr),
+      favourite_distance: fav, training_goal: goal,
+      training_type: types.length ? types : null,
+      injury_notes: injury || null,
+    }).eq('id', user.id);
+    if (error) { msg.textContent = error.message; msg.className = 'alert alert-error show'; }
+    else { msg.textContent = 'Sparat!'; msg.className = 'alert alert-success show'; setTimeout(() => { msg.className = 'alert'; }, 2500); }
+    btn.disabled = false;
+  });
+
+  // ── PR actions ──────────────────────────────────────────
+  document.getElementById('add-pr').addEventListener('click', openPrModal);
+  document.querySelectorAll('.pr-del').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('Ta bort detta rekord?')) return;
+    await sb.from('personal_records').delete().eq('id', b.dataset.id);
+    location.reload();
+  }));
+
   // ── Logout ──────────────────────────────────────────────
   document.getElementById('logout-pill').addEventListener('click', async () => {
     await sb.auth.signOut(); location.href = 'login.html';
@@ -598,6 +720,59 @@ const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       if (!race_date) { msg.textContent = 'Välj datum.';        msg.className = 'alert alert-error show'; return; }
       const btn = document.getElementById('rm-save'); btn.disabled = true;
       const { error } = await sb.from('races').insert({ user_id: user.id, name, race_date, location: location || null, goal_time: goal_time || null });
+      if (error) { msg.textContent = error.message; msg.className = 'alert alert-error show'; btn.disabled = false; return; }
+      location.reload();
+    });
+  }
+
+  function openUsernameModal() {
+    modalTitle.textContent = 'Användarnamn';
+    modalBody.innerHTML = `
+      <div class="field"><label class="field-label">Användarnamn</label>
+        <input type="text" class="input" id="un-input" maxlength="20" placeholder="ludvig" value="${esc(profile.username || '')}" /></div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.4);line-height:1.5;margin-bottom:6px">3–20 tecken: små bokstäver, siffror och understreck.</div>
+      <button class="btn btn-primary" id="un-save" style="margin-top:6px"><i class="ti ti-check"></i> Spara</button>
+      <div class="alert" id="un-msg" style="margin-top:8px"></div>`;
+    openModal();
+    const inp = document.getElementById('un-input');
+    inp.addEventListener('input', () => { inp.value = inp.value.toLowerCase().replace(/[^a-z0-9_]/g, ''); });
+    document.getElementById('un-save').addEventListener('click', async () => {
+      const username = inp.value.trim().toLowerCase();
+      const msg = document.getElementById('un-msg');
+      if (!/^[a-z0-9_]{3,20}$/.test(username)) { msg.textContent = '3–20 tecken: a–z, 0–9, _'; msg.className = 'alert alert-error show'; return; }
+      const btn = document.getElementById('un-save'); btn.disabled = true;
+      const { error } = await sb.from('profiles').update({ username }).eq('id', user.id);
+      if (error) { msg.textContent = error.code === '23505' ? 'Användarnamnet är upptaget.' : error.message; msg.className = 'alert alert-error show'; btn.disabled = false; return; }
+      location.reload();
+    });
+  }
+
+  function openPrModal() {
+    modalTitle.textContent = 'Lägg till PR';
+    modalBody.innerHTML = `
+      <div class="field"><label class="field-label">Distans</label>
+        <select class="input" id="pm-dist">${DIST_ORDER.map(d => `<option value="${d}">${DIST_LABELS[d]}</option>`).join('')}</select></div>
+      <div class="field"><label class="field-label">Tid (MM:SS eller HH:MM:SS)</label>
+        <input type="text" class="input" id="pm-time" inputmode="numeric" placeholder="t.ex. 22:30 eller 1:45:00" /></div>
+      <div class="field"><label class="field-label">Datum (valfritt)</label>
+        <input type="date" class="input" id="pm-date" /></div>
+      <div class="field"><label class="field-label">Plats (valfritt)</label>
+        <input type="text" class="input" id="pm-loc" placeholder="t.ex. Stockholm" /></div>
+      <div class="field"><label class="field-label">Anteckning (valfritt)</label>
+        <input type="text" class="input" id="pm-notes" placeholder="t.ex. nytt PB!" /></div>
+      <button class="btn btn-primary" id="pm-save" style="margin-top:6px"><i class="ti ti-check"></i> Lägg till</button>
+      <div class="alert" id="pm-msg" style="margin-top:8px"></div>`;
+    openModal();
+    document.getElementById('pm-save').addEventListener('click', async () => {
+      const distance = document.getElementById('pm-dist').value;
+      const time_seconds = parseTime(document.getElementById('pm-time').value);
+      const achieved_date = document.getElementById('pm-date').value || null;
+      const location = document.getElementById('pm-loc').value.trim();
+      const notes = document.getElementById('pm-notes').value.trim();
+      const msg = document.getElementById('pm-msg');
+      if (time_seconds == null || time_seconds <= 0) { msg.textContent = 'Ange en giltig tid (MM:SS).'; msg.className = 'alert alert-error show'; return; }
+      const btn = document.getElementById('pm-save'); btn.disabled = true;
+      const { error } = await sb.from('personal_records').insert({ user_id: user.id, distance, time_seconds, achieved_date, location: location || null, notes: notes || null });
       if (error) { msg.textContent = error.message; msg.className = 'alert alert-error show'; btn.disabled = false; return; }
       location.reload();
     });

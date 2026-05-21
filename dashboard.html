@@ -572,6 +572,43 @@ const TIPS = [
     return `<div class="seg-piece${e.id === leaderId ? ' leader' : ''}" style="width:${w}%;background:${color}"></div>`;
   }).join('') : '';
 
+  // ── Friends (top 3 by week km) ─────────────────────────
+  const { data: fships } = await sb.from('friendships').select('requester_id, addressee_id, status');
+  const friendIds = (fships || []).filter(f => f.status === 'accepted')
+    .map(f => f.requester_id === user.id ? f.addressee_id : f.requester_id);
+  let topFriends = [];
+  if (friendIds.length) {
+    const [{ data: fProfs }, { data: fWk }] = await Promise.all([
+      sb.from('profiles').select('id, name, neighbourhood_id, neighbourhoods(color)').in('id', friendIds),
+      sb.from('workouts').select('user_id, km').in('user_id', friendIds).gte('logged_date', ymd(thisMon)),
+    ]);
+    const pById = {}; (fProfs || []).forEach(p => pById[p.id] = p);
+    const kmById = {}; (fWk || []).forEach(w => kmById[w.user_id] = (kmById[w.user_id] || 0) + Number(w.km));
+    topFriends = friendIds.map(id => ({ id, p: pById[id] || {}, km: kmById[id] || 0 })).sort((a, b) => b.km - a.km).slice(0, 3);
+  }
+  const friendsCardHtml = topFriends.length ? `
+      <div class="d-card tappable" id="friends-card" onclick="location.href='friends.html'">
+        <i class="ti ti-chevron-right tap-chevron"></i>
+        <div class="d-lbl">Vänner</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+          ${topFriends.map(f => {
+            const color = f.p?.neighbourhoods?.color || (NEIGHBOURHOODS.find(n => n.id === f.p?.neighbourhood_id)?.color) || '#888780';
+            return `<div style="display:flex;align-items:center;gap:10px">
+              <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
+              <div style="flex:1;min-width:0;font-size:14px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.p?.name || 'Vän')}</div>
+              <div style="font-size:14px;font-weight:800;color:var(--hood-color)">${fmt(f.km)} km</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>` : `
+      <div class="d-card">
+        <div class="d-lbl">Vänner</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px">
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);font-weight:500">Lägg till vänner och tävla tillsammans</div>
+          <a href="friends.html" class="btn btn-primary btn-sm" style="text-decoration:none;flex-shrink:0;display:inline-flex"><i class="ti ti-user-plus"></i> Lägg till</a>
+        </div>
+      </div>`;
+
   // ── Render ─────────────────────────────────────────────
   document.getElementById('content').innerHTML = `
     <div class="dash-header">
@@ -579,9 +616,14 @@ const TIPS = [
         <div class="dash-greeting">${greeting}</div>
         <div class="nh-pill"><span class="nh-pill-dot"></span>${myNhName}</div>
       </div>
-      <button class="header-btn" onclick="location.href='profile.html'" aria-label="Inställningar">
-        <i class="ti ti-settings"></i>
-      </button>
+      <div style="display:flex;gap:8px">
+        <button class="header-btn" onclick="location.href='friends.html'" aria-label="Vänner">
+          <i class="ti ti-users"></i>
+        </button>
+        <button class="header-btn" onclick="location.href='profile.html'" aria-label="Inställningar">
+          <i class="ti ti-settings"></i>
+        </button>
+      </div>
     </div>
 
     <div class="dash-content">
@@ -645,6 +687,9 @@ const TIPS = [
         <div class="sthlm-line">Stockholm har sprungit <span class="sthlm-km" id="sthlm-km">0,0</span> km denna vecka</div>
         <div class="sthlm-bar">${sthlmSegs || '<div style="flex:1"></div>'}</div>
       </div>
+
+      <!-- Friends shortcut -->
+      ${friendsCardHtml}
 
       <!-- Mini map widget -->
       <div class="mini-map-wrap" onclick="location.href='leaderboard.html'">

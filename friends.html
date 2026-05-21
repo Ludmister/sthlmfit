@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>SthlmFit – Vänner</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background: #0D1B2A; }
+    .screen { background: #0D1B2A; min-height: 100vh; min-height: 100dvh; }
+    .card { background: #1A2E42 !important; box-shadow: none !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+    .input { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.1) !important; color: #fff !important; }
+    .input:focus { border-color: var(--hood-color) !important; background: rgba(255,255,255,0.10) !important; }
+    .input::placeholder { color: rgba(255,255,255,0.3) !important; }
+    .spinner { border-color: rgba(255,255,255,0.08); border-top-color: var(--hood-color); }
+
+    .topbar { background: linear-gradient(135deg, rgba(var(--hood-rgb),0.12) 0%, rgba(13,27,42,0) 70%), #0D1B2A; }
+    .tb-btn { display:flex; align-items:center; gap:5px; color:rgba(255,255,255,0.75); font-size:14px; font-weight:600; background:none; border:none; cursor:pointer; font-family:var(--font); padding:0; }
+    .tb-btn .ti { font-size:18px; }
+    .tb-icon { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:var(--font); }
+    .tb-icon .ti { font-size:18px; }
+
+    .page { padding: 4px 16px 32px; display:flex; flex-direction:column; gap:18px; }
+    .sec-title { font-size:12px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.45); margin:6px 4px 10px; display:flex; align-items:center; gap:7px; }
+    .sec-title .ti { font-size:15px; color:var(--hood-color); }
+
+    .avatar { width:42px; height:42px; border-radius:50%; flex-shrink:0; background:rgba(255,255,255,0.07); border:2px solid var(--hood-color); display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:900; }
+    .user-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:0.5px solid rgba(255,255,255,0.06); }
+    .user-row:first-child { padding-top:2px; }
+    .user-row:last-child { border-bottom:none; padding-bottom:2px; }
+    .u-name { font-size:15px; font-weight:700; color:#fff; }
+    .u-handle { font-size:12px; color:rgba(255,255,255,0.4); font-weight:500; margin-top:1px; }
+    .hood-pill { display:inline-flex; align-items:center; gap:5px; margin-top:5px; padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700; }
+    .hood-pill-dot { width:6px; height:6px; border-radius:50%; }
+    .u-km { text-align:right; flex-shrink:0; }
+    .u-km-num { font-size:15px; font-weight:800; color:var(--hood-color); }
+    .u-km-lbl { font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.05em; margin-top:1px; }
+    .rank-badge { width:22px; text-align:center; font-size:13px; font-weight:800; color:rgba(255,255,255,0.4); flex-shrink:0; }
+
+    .mini-btn { padding:7px 14px; border-radius:99px; border:none; font-family:var(--font); font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0; }
+    .mini-btn.add { background:var(--hood-color); color:#fff; }
+    .mini-btn.ghost { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.5); }
+    .req-actions { display:flex; gap:6px; flex-shrink:0; }
+    .icon-btn { width:36px; height:36px; border-radius:10px; padding:0; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:var(--font); }
+    .icon-btn .ti { font-size:18px; }
+    .icon-btn.accept { background:rgba(29,158,117,0.15); border-color:rgba(29,158,117,0.4); color:#6EE7B7; }
+    .icon-btn.decline { background:rgba(153,27,27,0.12); border-color:rgba(153,27,27,0.35); color:#FCA5A5; }
+
+    .empty { text-align:center; padding:48px 20px; }
+    .empty-icon { font-size:48px; color:rgba(255,255,255,0.18); }
+    .empty-title { font-size:16px; font-weight:700; color:rgba(255,255,255,0.8); margin:14px 0 6px; }
+    .empty-sub { font-size:13px; color:rgba(255,255,255,0.45); font-weight:500; line-height:1.5; max-width:260px; margin:0 auto 18px; }
+
+    .search-status { font-size:13px; color:rgba(255,255,255,0.4); text-align:center; padding:18px 0; }
+
+    /* iOS sheet (search modal + friend detail) */
+    .ov { position:fixed; inset:0; z-index:1500; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); opacity:0; visibility:hidden; transition:opacity 0.28s ease; }
+    .ov.open { opacity:1; visibility:visible; }
+    .sheet { position:absolute; left:50%; bottom:0; transform:translateX(-50%) translateY(100%); width:100%; max-width:var(--max-w); background:#1A2E42; border-radius:20px 20px 0 0; border-top:1px solid rgba(255,255,255,0.1); padding:8px 20px calc(24px + env(safe-area-inset-bottom)); max-height:88vh; overflow-y:auto; transition:transform 0.34s cubic-bezier(0.32,0.72,0,1); }
+    .ov.open .sheet { transform:translateX(-50%) translateY(0); }
+    .sheet-handle { width:36px; height:4px; background:rgba(255,255,255,0.22); border-radius:99px; margin:8px auto 10px; }
+    .sheet-close { position:absolute; top:14px; right:16px; width:32px; height:32px; border-radius:50%; padding:0; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:var(--font); }
+    .sheet-close .ti { font-size:18px; }
+    .sheet-title { font-size:18px; font-weight:800; color:#fff; margin:2px 0 16px; padding-right:40px; }
+    .stat-pair { display:flex; gap:10px; }
+    .stat-pill { flex:1; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:14px; text-align:center; }
+    .stat-pill .v { font-size:22px; font-weight:900; color:var(--hood-color); letter-spacing:-1px; }
+    .stat-pill .l { font-size:11px; color:rgba(255,255,255,0.45); font-weight:600; margin-top:3px; }
+  </style>
+</head>
+<body>
+<div class="screen">
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <button class="tb-btn" onclick="location.href='dashboard.html'"><i class="ti ti-arrow-left"></i> Karta</button>
+      <div class="topbar-wordmark">Vänner</div>
+      <button class="tb-icon" id="open-search" aria-label="Sök"><i class="ti ti-search"></i></button>
+    </div>
+  </div>
+
+  <div id="content"><div class="spinner" style="margin:60px auto"></div></div>
+</div>
+
+<!-- Search modal -->
+<div id="search-ov" class="ov">
+  <div class="sheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle" id="search-handle"></div>
+    <button class="sheet-close" id="search-close" aria-label="Stäng"><i class="ti ti-x"></i></button>
+    <div class="sheet-title">Lägg till vän</div>
+    <input type="text" class="input" id="search-input" placeholder="Sök användarnamn (@ludvig)" autocomplete="off" />
+    <div id="search-results" style="margin-top:6px"></div>
+  </div>
+</div>
+
+<!-- Friend detail sheet -->
+<div id="friend-ov" class="ov">
+  <div class="sheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle" id="friend-handle"></div>
+    <button class="sheet-close" id="friend-close" aria-label="Stäng"><i class="ti ti-x"></i></button>
+    <div class="sheet-title" id="friend-title"></div>
+    <div id="friend-body"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmt = km => Number(km).toFixed(1).replace('.', ',');
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function mondayOf(d) { const x = new Date(d); const day = x.getDay(); x.setDate(x.getDate()-(day===0?6:day-1)); x.setHours(0,0,0,0); return x; }
+function hoodColor(p) { return p?.neighbourhoods?.color || (NEIGHBOURHOODS.find(n => n.id === p?.neighbourhood_id)?.color) || '#888780'; }
+function hoodName(p)  { return p?.neighbourhoods?.name  || (NEIGHBOURHOODS.find(n => n.id === p?.neighbourhood_id)?.name)  || '–'; }
+function avatarHtml(name, color) {
+  return `<div class="avatar" style="border-color:${color};color:${color}">${esc((name||'?')[0].toUpperCase())}</div>`;
+}
+function hoodPill(p) {
+  const c = hoodColor(p);
+  return `<div class="hood-pill" style="background:${c}22;color:${c}"><span class="hood-pill-dot" style="background:${c}"></span>${esc(hoodName(p))}</div>`;
+}
+
+(async () => {
+  const user = await requireAuth();
+  if (!user) return;
+  const profile = await getProfile(user.id);
+  if (!profile?.neighbourhood_id) { location.href = 'onboarding.html'; return; }
+
+  const myColor = profile.neighbourhoods?.color || '#1D9E75';
+  const _c = myColor.replace('#','');
+  document.body.style.setProperty('--hood-color', myColor);
+  document.body.style.setProperty('--hood-rgb', `${parseInt(_c.slice(0,2),16)},${parseInt(_c.slice(2,4),16)},${parseInt(_c.slice(4,6),16)}`);
+
+  const weekStart = ymd(mondayOf(new Date()));
+
+  // ── Load friendships (RLS restricts to mine) ────────────
+  const { data: fships } = await sb.from('friendships').select('*');
+  const all = fships || [];
+  const accepted = all.filter(f => f.status === 'accepted');
+  const incoming = all.filter(f => f.status === 'pending' && f.addressee_id === user.id);
+  const relatedIds = new Set([user.id]);
+  all.forEach(f => { relatedIds.add(f.requester_id); relatedIds.add(f.addressee_id); });
+
+  const friendIds = accepted.map(f => f.requester_id === user.id ? f.addressee_id : f.requester_id);
+  const reqIds    = incoming.map(f => f.requester_id);
+  const loadIds   = [...new Set([...friendIds, ...reqIds])];
+
+  const profById = {}, weekKmById = {};
+  if (loadIds.length) {
+    const [{ data: profs }, { data: wk }] = await Promise.all([
+      sb.from('profiles').select('id, name, username, neighbourhood_id, neighbourhoods(name,color)').in('id', loadIds),
+      sb.from('workouts').select('user_id, km').in('user_id', loadIds).gte('logged_date', weekStart),
+    ]);
+    (profs || []).forEach(p => profById[p.id] = p);
+    (wk || []).forEach(w => weekKmById[w.user_id] = (weekKmById[w.user_id] || 0) + Number(w.km));
+  }
+
+  // ── Build sections ──────────────────────────────────────
+  const incomingHtml = incoming.length ? `
+    <div>
+      <div class="sec-title"><i class="ti ti-user-plus"></i> Vänförfrågningar</div>
+      <div class="card">
+        ${incoming.map(f => {
+          const p = profById[f.requester_id] || {};
+          return `<div class="user-row">
+            ${avatarHtml(p.name, hoodColor(p))}
+            <div style="flex:1;min-width:0">
+              <div class="u-name">${esc(p.name || 'Okänd')}</div>
+              <div class="u-handle">@${esc(p.username || '—')}</div>
+            </div>
+            <div class="req-actions">
+              <button class="icon-btn accept" data-accept="${f.id}" aria-label="Acceptera"><i class="ti ti-check"></i></button>
+              <button class="icon-btn decline" data-decline="${f.id}" aria-label="Avböj"><i class="ti ti-x"></i></button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  const friendsSorted = friendIds
+    .map(id => ({ id, p: profById[id] || {}, km: weekKmById[id] || 0 }))
+    .sort((a, b) => b.km - a.km);
+
+  const friendsHtml = friendsSorted.length ? `
+    <div>
+      <div class="sec-title"><i class="ti ti-users"></i> Vänner</div>
+      <div class="card">
+        ${friendsSorted.map((f, i) => `
+          <div class="user-row" data-friend="${f.id}" style="cursor:pointer">
+            <div class="rank-badge">${i + 1}</div>
+            ${avatarHtml(f.p.name, hoodColor(f.p))}
+            <div style="flex:1;min-width:0">
+              <div class="u-name">${esc(f.p.name || 'Okänd')}</div>
+              <div class="u-handle">@${esc(f.p.username || '—')}</div>
+              ${hoodPill(f.p)}
+            </div>
+            <div class="u-km">
+              <div class="u-km-num">${fmt(f.km)}</div>
+              <div class="u-km-lbl">km / v</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  const emptyHtml = (!friendsSorted.length && !incoming.length) ? `
+    <div class="empty">
+      <div class="empty-icon"><i class="ti ti-users-group"></i></div>
+      <div class="empty-title">Du har inga vänner ännu</div>
+      <div class="empty-sub">Lägg till någon för att tävla tillsammans!</div>
+      <button class="btn btn-primary" id="empty-add" style="width:auto;display:inline-flex"><i class="ti ti-search"></i> Sök användare</button>
+    </div>` : '';
+
+  document.getElementById('content').innerHTML = `<div class="page">${incomingHtml}${friendsHtml}${emptyHtml}</div>`;
+
+  // ── Wire request accept/decline ─────────────────────────
+  document.querySelectorAll('[data-accept]').forEach(b => b.addEventListener('click', async () => {
+    b.disabled = true;
+    await sb.from('friendships').update({ status: 'accepted' }).eq('id', b.dataset.accept);
+    location.reload();
+  }));
+  document.querySelectorAll('[data-decline]').forEach(b => b.addEventListener('click', async () => {
+    b.disabled = true;
+    await sb.from('friendships').delete().eq('id', b.dataset.decline);
+    location.reload();
+  }));
+
+  // ── Friend detail sheet ─────────────────────────────────
+  const friendOv = document.getElementById('friend-ov');
+  document.querySelectorAll('[data-friend]').forEach(row => row.addEventListener('click', () => openFriend(row.dataset.friend)));
+  async function openFriend(id) {
+    const p = profById[id] || {};
+    document.getElementById('friend-title').textContent = p.name || 'Vän';
+    const body = document.getElementById('friend-body');
+    body.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        ${avatarHtml(p.name, hoodColor(p))}
+        <div><div class="u-handle" style="font-size:13px">@${esc(p.username || '—')}</div>${hoodPill(p)}</div>
+      </div>
+      <div class="stat-pair">
+        <div class="stat-pill"><div class="v">${fmt(weekKmById[id] || 0)}</div><div class="l">km denna vecka</div></div>
+        <div class="stat-pill"><div class="v" id="friend-total">…</div><div class="l">km totalt</div></div>
+      </div>`;
+    friendOv.classList.add('open');
+    const { data: tw } = await sb.from('workouts').select('km').eq('user_id', id);
+    const total = (tw || []).reduce((s, w) => s + Number(w.km), 0);
+    const el = document.getElementById('friend-total');
+    if (el) el.textContent = total.toFixed(0);
+  }
+
+  // ── Search modal ────────────────────────────────────────
+  const searchOv = document.getElementById('search-ov');
+  const searchInput = document.getElementById('search-input');
+  const searchResults = document.getElementById('search-results');
+  function openSearch() { searchOv.classList.add('open'); setTimeout(() => searchInput.focus(), 300); }
+  function closeSearch() { searchOv.classList.remove('open'); }
+  document.getElementById('open-search').addEventListener('click', openSearch);
+  const emptyAdd = document.getElementById('empty-add');
+  if (emptyAdd) emptyAdd.addEventListener('click', openSearch);
+  document.getElementById('search-close').addEventListener('click', closeSearch);
+  document.getElementById('friend-close').addEventListener('click', () => friendOv.classList.remove('open'));
+  [searchOv, friendOv].forEach(ov => ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); }));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { searchOv.classList.remove('open'); friendOv.classList.remove('open'); } });
+
+  let searchTimer = null, searchToken = 0;
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
+    clearTimeout(searchTimer);
+    if (q.length < 1) { searchResults.innerHTML = '<div class="search-status">Skriv ett användarnamn att söka efter</div>'; return; }
+    searchResults.innerHTML = '<div class="search-status">Söker…</div>';
+    searchTimer = setTimeout(() => runSearch(q), 250);
+  });
+
+  async function runSearch(q) {
+    const token = ++searchToken;
+    const { data } = await sb.from('profiles')
+      .select('id, name, username, neighbourhood_id, neighbourhoods(name,color)')
+      .ilike('username', `%${q}%`).limit(12);
+    if (token !== searchToken) return;
+    const rows = (data || []).filter(p => p.username && !relatedIds.has(p.id));
+    if (!rows.length) { searchResults.innerHTML = '<div class="search-status">Inga användare hittades</div>'; return; }
+    searchResults.innerHTML = rows.map(p => `
+      <div class="user-row">
+        ${avatarHtml(p.name, hoodColor(p))}
+        <div style="flex:1;min-width:0">
+          <div class="u-name">${esc(p.name || 'Okänd')}</div>
+          <div class="u-handle">@${esc(p.username)}</div>
+          ${hoodPill(p)}
+        </div>
+        <button class="mini-btn add" data-addid="${p.id}">Lägg till</button>
+      </div>`).join('');
+    searchResults.querySelectorAll('[data-addid]').forEach(b => b.addEventListener('click', async () => {
+      b.disabled = true; b.textContent = '…';
+      const { error } = await sb.from('friendships').insert({ requester_id: user.id, addressee_id: b.dataset.addid, status: 'pending' });
+      if (error) { b.className = 'mini-btn ghost'; b.textContent = 'Redan skickad'; return; }
+      relatedIds.add(b.dataset.addid);
+      b.className = 'mini-btn ghost'; b.textContent = 'Skickad ✓';
+    }));
+  }
+
+  // swipe-down to dismiss sheets
+  [['search-handle','search-ov'],['friend-handle','friend-ov']].forEach(([h, o]) => {
+    const handle = document.getElementById(h);
+    const ov = document.getElementById(o);
+    const sheet = ov.querySelector('.sheet');
+    let y0 = null;
+    handle.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; sheet.style.transition = 'none'; }, { passive: true });
+    handle.addEventListener('touchmove',  e => { if (y0 == null) return; const dy = Math.max(0, e.touches[0].clientY - y0); sheet.style.transform = `translateX(-50%) translateY(${dy}px)`; }, { passive: true });
+    handle.addEventListener('touchend',   e => { if (y0 == null) return; const dy = e.changedTouches[0].clientY - y0; sheet.style.transition = ''; sheet.style.transform = ''; if (dy > 80) ov.classList.remove('open'); y0 = null; }, { passive: true });
+  });
+})();
+</script>
+</body>
+</html>
