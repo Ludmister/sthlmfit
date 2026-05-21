@@ -131,10 +131,12 @@
   </div>
 
   <div id="sheet-extra">
-    <!-- Strava status footer — shown when Strava connected -->
-    <div id="strava-footer" style="display:none;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);align-items:center;gap:7px">
-      <i class="ti ti-brand-strava" style="color:var(--strava);font-size:16px"></i>
-      <span style="font-size:13px;font-weight:600;color:var(--strava)">Strava kopplad</span>
+    <!-- Strava coming-soon badge -->
+    <div style="padding-top:10px;display:flex">
+      <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:rgba(252,76,2,0.10);border:1px solid rgba(252,76,2,0.25);border-radius:99px;pointer-events:none;user-select:none">
+        <i class="ti ti-brand-strava" style="font-size:13px;color:#FC4C02"></i>
+        <span style="font-size:12px;font-weight:600;color:#FC4C02;letter-spacing:0.01em">Strava sync — coming soon 🚀</span>
+      </div>
     </div>
 
     <!-- Activity feed -->
@@ -361,13 +363,8 @@ function timeAgo(ts) {
       banner.classList.remove('visible');
     }
 
-    if (profile.strava_connected) {
-      document.getElementById('log-widget').style.display = 'none';
-      document.getElementById('strava-footer').style.display = 'flex';
-    } else {
-      document.getElementById('log-widget').style.display = 'block';
-      document.getElementById('strava-footer').style.display = 'none';
-    }
+    document.getElementById('log-widget').style.display =
+      profile.strava_connected ? 'none' : 'block';
 
     document.getElementById('bottom-card').style.display = 'block';
     document.getElementById('loading').classList.add('hidden');
