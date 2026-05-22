@@ -142,11 +142,14 @@
       Dina löpningar synkas automatiskt — du behöver aldrig logga manuellt
     </div>
   </div>
-  <div style="width:100%;max-width:420px;padding-bottom:32px;flex-shrink:0;display:flex;flex-direction:column;align-items:center">
-    <a id="strava-btn" href="#" class="ob-btn-strava">
-      <i class="ti ti-brand-strava" style="font-size:18px"></i> Koppla med Strava
-    </a>
-    <button class="ob-skip" id="skip-btn">Hoppa över — logga manuellt</button>
+  <div style="width:100%;max-width:420px;padding-bottom:32px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:14px">
+    <div style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;background:rgba(252,76,2,0.12);opacity:0.6;user-select:none">
+      <i class="ti ti-brand-strava" style="font-size:16px;color:#FC4C02"></i>
+      <span style="font-size:13px;font-weight:700;color:#FC4C02">Strava sync — kommer snart 🚀</span>
+    </div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.4);font-weight:500;text-align:center;line-height:1.5;max-width:280px">
+      Du kan logga dina pass manuellt direkt på dashboarden — det går supersnabbt.
+    </div>
   </div>
 </div>
 
@@ -199,14 +202,9 @@
       return;
     }
 
-    document.getElementById('screen1').style.display = 'none';
-    document.getElementById('screen2').style.display = 'flex';
-    document.getElementById('strava-btn').href = STRAVA_AUTH_URL;
-  });
-
-  document.getElementById('skip-btn').addEventListener('click', () => {
     location.href = 'dashboard.html';
   });
+
 })();
 </script>
 </body>
